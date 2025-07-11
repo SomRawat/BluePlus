@@ -1,0 +1,7 @@
+build/
+.gradle/
+*.log
+.env
+.DS_Store
+README.md
+*.md
