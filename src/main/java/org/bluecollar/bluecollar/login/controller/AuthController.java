@@ -5,8 +5,8 @@ import org.bluecollar.bluecollar.login.service.AuthService;
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,14 +37,11 @@ public class AuthController {
     }
     
     @PostMapping("/google-auth")
-    public BlueCollarApiResponse<LoginResponse> googleAuth(@RequestBody GoogleAuthRequest request,
+    public BlueCollarApiResponse<LoginResponse> googleAuth(@Valid @RequestBody GoogleAuthRequest request,
                                        @RequestHeader(value = "Api-Client", defaultValue = "web") String clientType) {
-        try {
             LoginResponse response = authService.googleAuth(request, clientType);
             return new BlueCollarApiResponse<>(response, 200);
-        } catch (Exception e) {
-            return new BlueCollarApiResponse<>(null, 400);
-        }
+
     }
     
 

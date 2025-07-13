@@ -16,6 +16,9 @@ public class Customer {
     
     private String email;
     private String name;
+    private String profilePhoto;
+    
+    @Indexed(unique = true, sparse = true)
     private String googleId;
     private String address;
     private String city;
@@ -41,6 +44,9 @@ public class Customer {
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    
+    public String getProfilePhoto() { return profilePhoto; }
+    public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
     
     public String getGoogleId() { return googleId; }
     public void setGoogleId(String googleId) { this.googleId = googleId; }

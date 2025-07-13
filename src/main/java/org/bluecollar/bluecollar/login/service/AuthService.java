@@ -8,11 +8,11 @@ import org.bluecollar.bluecollar.login.repository.OtpSessionRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
 import org.bluecollar.bluecollar.common.util.ValidationUtil;
 import org.bluecollar.bluecollar.common.util.SecurityUtil;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 public class AuthService {
@@ -28,6 +28,9 @@ public class AuthService {
     
     @Autowired
     private SessionService sessionService;
+    
+    @Autowired
+    private GoogleOAuthService googleOAuthService;
     
     public String sendOtp(LoginRequest request) {
         if (!ValidationUtil.isValidMobile(request.getMobile())) {
@@ -94,9 +97,27 @@ public class AuthService {
     }
     
     public LoginResponse googleAuth(GoogleAuthRequest request, String clientType) {
-        // TODO: Verify Google ID token
-        String googleId = extractGoogleId(request.getIdToken());
-        String email = extractEmail(request.getIdToken());
+        if (request.getIdToken() == null || request.getIdToken().trim().isEmpty()) {
+            throw new RuntimeException("Google ID token is required");
+        }
+        
+        try {
+            GoogleIdToken.Payload payload = googleOAuthService.verifyToken(request.getIdToken());
+            return processGoogleLogin(payload, clientType);
+        } catch (Exception e) {
+            throw new RuntimeException("Google authentication failed: " + e.getMessage());
+        }
+    }
+    
+    private LoginResponse processGoogleLogin(GoogleIdToken.Payload payload, String clientType) {
+        String googleId = payload.getSubject();
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        String profilePhoto = (String) payload.get("picture");
+        
+        if (!payload.getEmailVerified()) {
+            throw new RuntimeException("Google email not verified");
+        }
         
         Optional<Customer> customerOpt = customerRepository.findByGoogleId(googleId);
         boolean isFirstTime = customerOpt.isEmpty();
@@ -106,28 +127,40 @@ public class AuthService {
             customer = new Customer();
             customer.setGoogleId(googleId);
             customer.setEmail(email);
+            customer.setName(name);
+            customer.setProfilePhoto(profilePhoto);
             customer = customerRepository.save(customer);
         } else {
             customer = customerOpt.get();
+            boolean needsUpdate = false;
+            
+            if (!email.equals(customer.getEmail())) {
+                customer.setEmail(email);
+                needsUpdate = true;
+            }
+            if (!name.equals(customer.getName())) {
+                customer.setName(name);
+                needsUpdate = true;
+            }
+            if (!profilePhoto.equals(customer.getProfilePhoto())) {
+                customer.setProfilePhoto(profilePhoto);
+                needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+                customer.setUpdatedAt(LocalDateTime.now());
+                customer = customerRepository.save(customer);
+            }
         }
         
-        String token = jwtService.generateToken(customer.getId());
         String sessionToken = sessionService.createSession(customer.getId(), clientType);
-        
-        return new LoginResponse(sessionToken, isFirstTime, customer.getId(), "Google login successful");
+        return new LoginResponse(sessionToken, isFirstTime, customer.getId(), "Google login successful", 
+                               customer.getEmail(), customer.getName(), customer.getProfilePhoto());
     }
     
     private String generateOtp() {
         return SecurityUtil.generateSecureOtp();
     }
     
-    private String extractGoogleId(String idToken) {
-        // TODO: Implement Google ID token verification
-        return "google_id_placeholder";
-    }
-    
-    private String extractEmail(String idToken) {
-        // TODO: Extract email from Google ID token
-        return "email@example.com";
-    }
+
 }
