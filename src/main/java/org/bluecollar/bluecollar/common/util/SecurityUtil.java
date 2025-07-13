@@ -9,7 +9,7 @@ public class SecurityUtil {
     private static final String CHARACTERS = "0123456789";
     
     public static String generateSecureOtp() {
-        StringBuilder otp = new StringBuilder(6);
+        StringBuilder otp = new StringBuilder(4);
         for (int i = 0; i < 4; i++) {
             otp.append(CHARACTERS.charAt(secureRandom.nextInt(CHARACTERS.length())));
         }

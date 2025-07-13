@@ -24,9 +24,6 @@ public class AuthService {
     private OtpSessionRepository otpSessionRepository;
     
     @Autowired
-    private JwtService jwtService;
-    
-    @Autowired
     private SessionService sessionService;
     
     @Autowired
@@ -90,7 +87,6 @@ public class AuthService {
             customer = customerOpt.get();
         }
         
-        String token = jwtService.generateToken(customer.getId());
         String sessionToken = sessionService.createSession(customer.getId(), clientType);
         
         return new LoginResponse(sessionToken, isFirstTime, customer.getId(), "Login successful");
@@ -158,9 +154,30 @@ public class AuthService {
                                customer.getEmail(), customer.getName(), customer.getProfilePhoto());
     }
     
+    public Customer updateProfile(String customerId, UpdateProfileRequest request) {
+        Optional<Customer> customerOpt = customerRepository.findById(customerId);
+        if (customerOpt.isEmpty()) {
+            throw new RuntimeException("Customer not found");
+        }
+        
+        Customer customer = customerOpt.get();
+        
+        if (request.getName() != null) customer.setName(request.getName());
+        if (request.getEmail() != null) customer.setEmail(request.getEmail());
+        if (request.getPhoneCode() != null) customer.setPhoneCode(request.getPhoneCode());
+        if (request.getRelationType() != null) customer.setRelationType(request.getRelationType());
+        if (request.getDob() != null) customer.setDob(request.getDob());
+        if (request.getCountry() != null) customer.setCountry(request.getCountry());
+        if (request.getAddress() != null) customer.setAddress(request.getAddress());
+        if (request.getCity() != null) customer.setCity(request.getCity());
+        if (request.getState() != null) customer.setState(request.getState());
+        if (request.getPincode() != null) customer.setPincode(request.getPincode());
+        
+        customer.setUpdatedAt(LocalDateTime.now());
+        return customerRepository.save(customer);
+    }
+    
     private String generateOtp() {
         return SecurityUtil.generateSecureOtp();
     }
-    
-
 }

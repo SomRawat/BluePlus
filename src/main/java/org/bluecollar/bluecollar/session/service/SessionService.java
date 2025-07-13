@@ -36,4 +36,9 @@ public class SessionService {
         session.setCurrentSection(section);
         sessionRepository.save(session);
     }
+    
+    public String getCustomerIdFromToken(String sessionToken) {
+        UserSession session = validateSession(sessionToken);
+        return session.getCustomerId();
+    }
 }

@@ -17,6 +17,10 @@ public class Customer {
     private String email;
     private String name;
     private String profilePhoto;
+    private String phoneCode;
+    private String relationType;
+    private String dob;
+    private String country;
     
     @Indexed(unique = true, sparse = true)
     private String googleId;
@@ -48,11 +52,20 @@ public class Customer {
     public String getProfilePhoto() { return profilePhoto; }
     public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
     
+    public String getPhoneCode() { return phoneCode; }
+    public void setPhoneCode(String phoneCode) { this.phoneCode = phoneCode; }
+    
+    public String getRelationType() { return relationType; }
+    public void setRelationType(String relationType) { this.relationType = relationType; }
+    
+    public String getDob() { return dob; }
+    public void setDob(String dob) { this.dob = dob; }
+    
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+    
     public String getGoogleId() { return googleId; }
     public void setGoogleId(String googleId) { this.googleId = googleId; }
-    
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
@@ -65,6 +78,9 @@ public class Customer {
     
     public String getPincode() { return pincode; }
     public void setPincode(String pincode) { this.pincode = pincode; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

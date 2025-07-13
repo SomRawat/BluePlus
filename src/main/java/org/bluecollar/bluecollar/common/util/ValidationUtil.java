@@ -16,6 +16,6 @@ public class ValidationUtil {
     }
     
     public static boolean isValidOtp(String otp) {
-        return otp != null && otp.matches("\\d{6}");
+        return otp != null && otp.matches("\\d{4}");
     }
 }
