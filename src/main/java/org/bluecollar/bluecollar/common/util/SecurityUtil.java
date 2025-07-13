@@ -10,7 +10,7 @@ public class SecurityUtil {
     
     public static String generateSecureOtp() {
         StringBuilder otp = new StringBuilder(6);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 4; i++) {
             otp.append(CHARACTERS.charAt(secureRandom.nextInt(CHARACTERS.length())));
         }
         return otp.toString();
