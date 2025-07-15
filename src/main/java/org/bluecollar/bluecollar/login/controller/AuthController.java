@@ -21,10 +21,8 @@ public class AuthController {
 
     @PostMapping("/send-otp")
     public BlueCollarApiResponse<String> sendOtp(@RequestBody LoginRequest request) {
-
         String message = authService.sendOtp(request);
         return new BlueCollarApiResponse<>(message, 200);
-
     }
 
     @PostMapping("/verify-otp")

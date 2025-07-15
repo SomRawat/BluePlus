@@ -11,6 +11,7 @@ import org.bluecollar.bluecollar.common.util.SecurityUtil;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -30,7 +31,7 @@ public class AuthService {
     private GoogleOAuthService googleOAuthService;
     
     public String sendOtp(LoginRequest request) {
-        if (!ValidationUtil.isValidMobile(request.getMobile())) {
+        if (!ValidationUtil.isValidMobile(request)) {
             throw new RuntimeException("Invalid mobile number");
         }
         
@@ -50,7 +51,7 @@ public class AuthService {
     }
     
     public LoginResponse verifyOtp(OtpVerifyRequest request, String clientType) {
-        if (!ValidationUtil.isValidMobile(request.getMobile()) || !ValidationUtil.isValidOtp(request.getOtp())) {
+        if (!ValidationUtil.isValidMobile(request) || !ValidationUtil.isValidOtp(request.getOtp())) {
             throw new RuntimeException("Invalid input data");
         }
         
@@ -76,15 +77,28 @@ public class AuthService {
         
         // Check if customer exists
         Optional<Customer> customerOpt = customerRepository.findByMobile(request.getMobile());
-        boolean isFirstTime = customerOpt.isEmpty();
         
         Customer customer;
-        if (isFirstTime) {
+        boolean isFirstTime;
+        
+        if (customerOpt.isEmpty()) {
+            // New customer
             customer = new Customer();
             customer.setMobile(request.getMobile());
-            customer = customerRepository.save(customer);
+            // Set phone code if provided
+            if (request.getPhoneCode() != null && !request.getPhoneCode().isEmpty()) {
+                customer.setPhoneCode(request.getPhoneCode());
+            }
+            try {
+                customer = customerRepository.save(customer);
+                isFirstTime = true;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create customer: " + e.getMessage());
+            }
         } else {
+            // Existing customer - check if profile is complete
             customer = customerOpt.get();
+            isFirstTime = isProfileIncomplete(customer);
         }
         
         String sessionToken = sessionService.createSession(customer.getId(), clientType);
@@ -179,5 +193,11 @@ public class AuthService {
     
     private String generateOtp() {
         return SecurityUtil.generateSecureOtp();
+    }
+    
+    private boolean isProfileIncomplete(Customer customer) {
+        // Profile is incomplete if essential fields are missing
+        return customer.getName() == null || customer.getName().trim().isEmpty() ||
+               customer.getEmail() == null || customer.getEmail().trim().isEmpty();
     }
 }
