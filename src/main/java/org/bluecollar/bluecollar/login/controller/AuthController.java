@@ -65,4 +65,10 @@ public class AuthController {
             return new BlueCollarApiResponse<>(null, 400);
         }
     }
+    @GetMapping("/profile")
+    public BlueCollarApiResponse<Customer> getCustomerProfile(@RequestHeader("Session-Token") String sessionToken) {
+            Customer customer = authService.getCustomerDetails(sessionToken);
+            return new BlueCollarApiResponse<>(customer, 200);
+
+    }
 }
