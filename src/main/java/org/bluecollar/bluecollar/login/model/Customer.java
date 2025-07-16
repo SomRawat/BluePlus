@@ -1,8 +1,11 @@
 package org.bluecollar.bluecollar.login.model;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(collection = "customers")
@@ -19,7 +22,7 @@ public class Customer {
     private String profilePhoto;
     private String phoneCode;
     private String relationType;
-    private String dob;
+    private LocalDate dob;
     private String country;
     
     @Indexed(unique = true, sparse = true)
@@ -28,13 +31,12 @@ public class Customer {
     private String city;
     private String state;
     private String pincode;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     
-    public Customer() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
+    @CreatedDate
+    private LocalDateTime createdAt;
+    
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
     
     // Getters and Setters
     public String getId() { return id; }
@@ -58,8 +60,8 @@ public class Customer {
     public String getRelationType() { return relationType; }
     public void setRelationType(String relationType) { this.relationType = relationType; }
     
-    public String getDob() { return dob; }
-    public void setDob(String dob) { this.dob = dob; }
+    public LocalDate getDob() { return dob; }
+    public void setDob(LocalDate dob) { this.dob = dob; } 
     
     public String getCountry() { return country; }
     public void setCountry(String country) { this.country = country; }

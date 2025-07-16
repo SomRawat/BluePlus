@@ -1,5 +1,7 @@
 package org.bluecollar.bluecollar.login.service;
 
+import org.bluecollar.bluecollar.common.exception.BadRequestException;
+import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.login.dto.*;
 import org.bluecollar.bluecollar.login.model.Customer;
 import org.bluecollar.bluecollar.login.model.OtpSession;
@@ -10,7 +12,9 @@ import org.bluecollar.bluecollar.common.util.ValidationUtil;
 import org.bluecollar.bluecollar.common.util.SecurityUtil;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -18,21 +22,25 @@ import java.util.Optional;
 @Service
 public class AuthService {
     
+    private final CustomerRepository customerRepository;
+    private final OtpSessionRepository otpSessionRepository;
+    private final SessionService sessionService;
+    private final GoogleOAuthService googleOAuthService;
+
     @Autowired
-    private CustomerRepository customerRepository;
-    
-    @Autowired
-    private OtpSessionRepository otpSessionRepository;
-    
-    @Autowired
-    private SessionService sessionService;
-    
-    @Autowired
-    private GoogleOAuthService googleOAuthService;
-    
+    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, SessionService sessionService, GoogleOAuthService googleOAuthService) {
+        this.customerRepository = customerRepository;
+        this.otpSessionRepository = otpSessionRepository;
+        this.sessionService = sessionService;
+        this.googleOAuthService = googleOAuthService;
+    }
+
+    // Encapsulating OTP logic in a transaction ensures that deleting old OTPs
+    // and saving the new one is an atomic operation.
+    @Transactional
     public String sendOtp(LoginRequest request) {
         if (!ValidationUtil.isValidMobile(request)) {
-            throw new RuntimeException("Invalid mobile number");
+            throw new BadRequestException("Invalid mobile number format or unsupported country code.");
         }
         
         String otp = generateOtp();
@@ -50,32 +58,33 @@ public class AuthService {
         return "OTP sent successfully";
     }
     
+    @Transactional
     public LoginResponse verifyOtp(OtpVerifyRequest request, String clientType) {
         if (!ValidationUtil.isValidMobile(request) || !ValidationUtil.isValidOtp(request.getOtp())) {
-            throw new RuntimeException("Invalid input data");
+            throw new BadRequestException("Invalid mobile number or OTP format.");
         }
         
         Optional<OtpSession> otpSessionOpt = otpSessionRepository.findByMobileAndVerifiedFalse(request.getMobile());
         
         if (otpSessionOpt.isEmpty()) {
-            throw new RuntimeException("Invalid or expired OTP session");
+            throw new BadRequestException("No active OTP session found. Please request a new OTP.");
         }
         
         OtpSession otpSession = otpSessionOpt.get();
         
         if (!otpSession.getOtp().equals(request.getOtp())) {
-            throw new RuntimeException("Invalid OTP");
+            // Note: Consider adding a mechanism to track failed attempts to prevent brute-force attacks.
+            throw new BadRequestException("The OTP entered is incorrect.");
         }
         
         if (otpSession.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP expired");
+            throw new BadRequestException("The OTP has expired. Please request a new one.");
         }
         
         // Mark OTP as verified
         otpSession.setVerified(true);
         otpSessionRepository.save(otpSession);
         
-        // Check if customer exists
         Optional<Customer> customerOpt = customerRepository.findByMobile(request.getMobile());
         
         Customer customer;
@@ -83,20 +92,10 @@ public class AuthService {
         
         if (customerOpt.isEmpty()) {
             // New customer
-            customer = new Customer();
-            customer.setMobile(request.getMobile());
-            // Set phone code if provided
-            if (request.getPhoneCode() != null && !request.getPhoneCode().isEmpty()) {
-                customer.setPhoneCode(request.getPhoneCode());
-            }
-            try {
-                customer = customerRepository.save(customer);
-                isFirstTime = true;
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to create customer: " + e.getMessage());
-            }
+            customer = createNewCustomerFromMobile(request);
+            isFirstTime = true;
         } else {
-            // Existing customer - check if profile is complete
+            // Existing customer
             customer = customerOpt.get();
             isFirstTime = isProfileIncomplete(customer);
         }
@@ -108,25 +107,24 @@ public class AuthService {
     
     public LoginResponse googleAuth(GoogleAuthRequest request, String clientType) {
         if (request.getIdToken() == null || request.getIdToken().trim().isEmpty()) {
-            throw new RuntimeException("Google ID token is required");
+            throw new BadRequestException("Google ID token is required.");
         }
         
         try {
             GoogleIdToken.Payload payload = googleOAuthService.verifyToken(request.getIdToken());
             return processGoogleLogin(payload, clientType);
         } catch (Exception e) {
-            throw new RuntimeException("Google authentication failed: " + e.getMessage());
+            // Log the original exception e
+            throw new BadRequestException("Google authentication failed: Invalid token.");
         }
     }
     
-    private LoginResponse processGoogleLogin(GoogleIdToken.Payload payload, String clientType) {
+    @Transactional
+    protected LoginResponse processGoogleLogin(GoogleIdToken.Payload payload, String clientType) {
         String googleId = payload.getSubject();
-        String email = payload.getEmail();
-        String name = (String) payload.get("name");
-        String profilePhoto = (String) payload.get("picture");
         
         if (!payload.getEmailVerified()) {
-            throw new RuntimeException("Google email not verified");
+            throw new BadRequestException("Google email is not verified.");
         }
         
         Optional<Customer> customerOpt = customerRepository.findByGoogleId(googleId);
@@ -134,44 +132,24 @@ public class AuthService {
         
         Customer customer;
         if (isFirstTime) {
-            customer = new Customer();
-            customer.setGoogleId(googleId);
-            customer.setEmail(email);
-            customer.setName(name);
-            customer.setProfilePhoto(profilePhoto);
-            customer = customerRepository.save(customer);
+            customer = createNewCustomerFromGoogle(payload);
         } else {
             customer = customerOpt.get();
-            boolean needsUpdate = false;
-            
-            if (!email.equals(customer.getEmail())) {
-                customer.setEmail(email);
-                needsUpdate = true;
-            }
-            if (!name.equals(customer.getName())) {
-                customer.setName(name);
-                needsUpdate = true;
-            }
-            if (!profilePhoto.equals(customer.getProfilePhoto())) {
-                customer.setProfilePhoto(profilePhoto);
-                needsUpdate = true;
-            }
-            
-            if (needsUpdate) {
-                customer.setUpdatedAt(LocalDateTime.now());
-                customer = customerRepository.save(customer);
-            }
+            updateCustomerFromGoogle(customer, payload);
         }
         
         String sessionToken = sessionService.createSession(customer.getId(), clientType);
         return new LoginResponse(sessionToken, isFirstTime, customer.getId(), "Google login successful", 
                                customer.getEmail(), customer.getName(), customer.getProfilePhoto());
     }
-    
+
+    // It's good practice to manage entity updates inside @Transactional methods.
+    // Consider using Spring Data JPA Auditing (@CreatedDate, @LastModifiedDate) to automatically manage createdAt/updatedAt fields.
+    @Transactional
     public Customer updateProfile(String customerId, UpdateProfileRequest request) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
-            throw new RuntimeException("Customer not found");
+            throw new ResourceNotFoundException("Customer not found with ID: " + customerId);
         }
         
         Customer customer = customerOpt.get();
@@ -191,6 +169,48 @@ public class AuthService {
         return customerRepository.save(customer);
     }
     
+    private Customer createNewCustomerFromMobile(OtpVerifyRequest request) {
+        Customer customer = new Customer();
+        customer.setMobile(request.getMobile());
+        if (request.getPhoneCode() != null && !request.getPhoneCode().isEmpty()) {
+            customer.setPhoneCode(request.getPhoneCode());
+        }
+        return customerRepository.save(customer);
+    }
+
+    private Customer createNewCustomerFromGoogle(@NonNull GoogleIdToken.Payload payload) {
+        Customer customer = new Customer();
+        customer.setGoogleId(payload.getSubject());
+        customer.setEmail(payload.getEmail());
+        customer.setName((String) payload.get("name"));
+        customer.setProfilePhoto((String) payload.get("picture"));
+        return customerRepository.save(customer);
+    }
+
+    private void updateCustomerFromGoogle(@NonNull Customer customer, @NonNull GoogleIdToken.Payload payload) {
+        boolean needsUpdate = false;
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        String profilePhoto = (String) payload.get("picture");
+
+        if (email != null && !email.equals(customer.getEmail())) {
+            customer.setEmail(email);
+            needsUpdate = true;
+        }
+        if (name != null && !name.equals(customer.getName())) {
+            customer.setName(name);
+            needsUpdate = true;
+        }
+        if (profilePhoto != null && !profilePhoto.equals(customer.getProfilePhoto())) {
+            customer.setProfilePhoto(profilePhoto);
+            needsUpdate = true;
+        }
+        if (needsUpdate) {
+            customer.setUpdatedAt(LocalDateTime.now());
+            customerRepository.save(customer);
+        }
+    }
+
     private String generateOtp() {
         return SecurityUtil.generateSecureOtp();
     }

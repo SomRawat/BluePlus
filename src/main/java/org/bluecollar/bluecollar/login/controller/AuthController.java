@@ -13,40 +13,56 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
+    private final SessionService sessionService;
 
     @Autowired
-    private SessionService sessionService;
+    public AuthController(AuthService authService, SessionService sessionService) {
+        this.authService = authService;
+        this.sessionService = sessionService;
+    }
 
     @PostMapping("/send-otp")
-    public BlueCollarApiResponse<String> sendOtp(@RequestBody LoginRequest request) {
-        String message = authService.sendOtp(request);
-        return new BlueCollarApiResponse<>(message, 200);
+    public BlueCollarApiResponse<String> sendOtp(@Valid @RequestBody LoginRequest request) {
+        try {
+            String message = authService.sendOtp(request);
+            return new BlueCollarApiResponse<>(message, 200);
+        } catch (Exception e) {
+            return new BlueCollarApiResponse<>(e.getMessage(), 400);
+        }
     }
 
     @PostMapping("/verify-otp")
-    public BlueCollarApiResponse<LoginResponse> verifyOtp(@RequestBody OtpVerifyRequest request,
+    public BlueCollarApiResponse<LoginResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request,
                                                           @RequestHeader(value = "Api-Client", defaultValue = "web") String clientType) {
-        LoginResponse response = authService.verifyOtp(request, clientType);
-        return new BlueCollarApiResponse<>(response, 200);
+        try {
+            LoginResponse response = authService.verifyOtp(request, clientType);
+            return new BlueCollarApiResponse<>(response, 200);
+        } catch (Exception e) {
+            return new BlueCollarApiResponse<>(null, 400);
+        }
     }
 
     @PostMapping("/google-auth")
     public BlueCollarApiResponse<LoginResponse> googleAuth(@Valid @RequestBody GoogleAuthRequest request,
                                                            @RequestHeader(value = "Api-Client", defaultValue = "web") String clientType) {
-        LoginResponse response = authService.googleAuth(request, clientType);
-        return new BlueCollarApiResponse<>(response, 200);
+        try {
+            LoginResponse response = authService.googleAuth(request, clientType);
+            return new BlueCollarApiResponse<>(response, 200);
+        } catch (Exception e) {
+            return new BlueCollarApiResponse<>(null, 400);
+        }
     }
 
     @PutMapping("/update-profile")
-    public BlueCollarApiResponse<Customer> updateProfile(@RequestBody UpdateProfileRequest request,
+    public BlueCollarApiResponse<Customer> updateProfile(@Valid @RequestBody UpdateProfileRequest request,
                                                          @RequestHeader("Session-Token") String sessionToken) {
-        String customerId = sessionService.getCustomerIdFromToken(sessionToken);
-        Customer updatedCustomer = authService.updateProfile(customerId, request);
-        return new BlueCollarApiResponse<>(updatedCustomer, 200);
-
+        try {
+            String customerId = sessionService.getCustomerIdFromToken(sessionToken);
+            Customer updatedCustomer = authService.updateProfile(customerId, request);
+            return new BlueCollarApiResponse<>(updatedCustomer, 200);
+        } catch (Exception e) {
+            return new BlueCollarApiResponse<>(null, 400);
+        }
     }
-
-
 }

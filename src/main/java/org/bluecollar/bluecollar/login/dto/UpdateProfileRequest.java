@@ -1,11 +1,13 @@
 package org.bluecollar.bluecollar.login.dto;
 
+import java.time.LocalDate;
+
 public class UpdateProfileRequest {
     private String name;
     private String email;
     private String phoneCode;
     private String relationType;
-    private String dob;
+    private LocalDate dob;
     private String country;
     private String address;
     private String city;
@@ -24,8 +26,8 @@ public class UpdateProfileRequest {
     public String getRelationType() { return relationType; }
     public void setRelationType(String relationType) { this.relationType = relationType; }
     
-    public String getDob() { return dob; }
-    public void setDob(String dob) { this.dob = dob; }
+    public LocalDate getDob() { return dob; }
+    public void setDob(LocalDate dob) { this.dob = dob; }
     
     public String getCountry() { return country; }
     public void setCountry(String country) { this.country = country; }

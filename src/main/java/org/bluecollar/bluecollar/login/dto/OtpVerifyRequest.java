@@ -1,29 +1,26 @@
 package org.bluecollar.bluecollar.login.dto;
 
-public class OtpVerifyRequest {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+
+public class OtpVerifyRequest implements MobileRequest {
+    @NotBlank(message = "Mobile number cannot be blank")
     private String mobile;
-    private String otp;
+
     private String phoneCode;
 
-    public OtpVerifyRequest() {}
+    @NotBlank(message = "OTP cannot be blank")
+    @Pattern(regexp = "\\d{4}", message = "OTP must be 4 digits")
+    private String otp;
 
-    public OtpVerifyRequest(String mobile, String otp) {
-        this.mobile = mobile;
-        this.otp = otp;
-    }
-
-    public OtpVerifyRequest(String mobile, String otp, String phoneCode) {
-        this.mobile = mobile;
-        this.otp = otp;
-        this.phoneCode = phoneCode;
-    }
-
+    @Override
     public String getMobile() { return mobile; }
     public void setMobile(String mobile) { this.mobile = mobile; }
 
-    public String getOtp() { return otp; }
-    public void setOtp(String otp) { this.otp = otp; }
-
+    @Override
     public String getPhoneCode() { return phoneCode; }
     public void setPhoneCode(String phoneCode) { this.phoneCode = phoneCode; }
+
+    public String getOtp() { return otp; }
+    public void setOtp(String otp) { this.otp = otp; }
 }
