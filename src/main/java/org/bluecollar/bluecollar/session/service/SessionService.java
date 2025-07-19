@@ -1,19 +1,24 @@
 package org.bluecollar.bluecollar.session.service;
 
 import org.bluecollar.bluecollar.session.model.UserSession;
+import org.bluecollar.bluecollar.common.util.SecurityUtil;
+import org.bluecollar.bluecollar.common.exception.UnauthorizedException;
 import org.bluecollar.bluecollar.session.repository.UserSessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import java.util.UUID;
 
 @Service
 public class SessionService {
     
+    private final UserSessionRepository sessionRepository;
+
     @Autowired
-    private UserSessionRepository sessionRepository;
+    public SessionService(UserSessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
+    }
     
     public String createSession(String customerId, String clientType) {
-        String sessionToken = UUID.randomUUID().toString();
+        String sessionToken = SecurityUtil.generateSecureToken();
         UserSession session = new UserSession(sessionToken, customerId, clientType);
         sessionRepository.save(session);
         return sessionToken;
@@ -21,11 +26,11 @@ public class SessionService {
     
     public UserSession validateSession(String sessionToken) {
         UserSession session = sessionRepository.findBySessionToken(sessionToken)
-                .orElseThrow(() -> new RuntimeException("Session not valid"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid or expired session token."));
         
         if (session.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
             sessionRepository.delete(session);
-            throw new RuntimeException("Session not valid");
+            throw new UnauthorizedException("Invalid or expired session token.");
         }
         
         return session;

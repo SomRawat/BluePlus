@@ -1,7 +1,11 @@
 package org.bluecollar.bluecollar.login.dto;
 
-public class LoginRequest {
+import jakarta.validation.constraints.NotBlank;
+
+public class LoginRequest implements MobileRequest {
+    @NotBlank(message = "Mobile number cannot be blank")
     private String mobile;
+    
     private String phoneCode;
     
     public LoginRequest() {}

@@ -1,7 +1,6 @@
 package org.bluecollar.bluecollar.common.util;
 
-import org.bluecollar.bluecollar.login.dto.LoginRequest;
-import org.bluecollar.bluecollar.login.dto.OtpVerifyRequest;
+import org.bluecollar.bluecollar.login.dto.MobileRequest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,22 +49,12 @@ public final class ValidationUtil {
         COUNTRY_MOBILE_RULES.put("973", bahrainRule);
     }
 
-    public static boolean isValidMobile(LoginRequest request) {
+    public static boolean isValidMobile(MobileRequest request) {
         if (request == null || request.getMobile() == null) {
             return false;
         }
         String phoneCode = request.getPhoneCode();
-        if (phoneCode == null || phoneCode.isEmpty()) {
-            phoneCode = "+91";
-        }
-        return isValidMobile(request.getMobile(), phoneCode);
-    }
-
-    public static boolean isValidMobile(OtpVerifyRequest request) {
-        if (request == null || request.getMobile() == null) {
-            return false;
-        }
-        String phoneCode = request.getPhoneCode();
+        // Default to India if no phone code is provided. This should be a well-documented business rule.
         if (phoneCode == null || phoneCode.isEmpty()) {
             phoneCode = "+91";
         }
@@ -84,8 +73,8 @@ public final class ValidationUtil {
             return rule.isValid(mobile);
         }
 
-        // Fall back to India if country code not found
-        return COUNTRY_MOBILE_RULES.get("+91").isValid(mobile);
+        // Reject mobile numbers with unsupported country codes.
+        return false;
     }
 
     public static boolean isValidEmail(String email) {

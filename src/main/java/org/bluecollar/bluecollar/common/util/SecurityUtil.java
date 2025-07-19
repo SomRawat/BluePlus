@@ -22,33 +22,10 @@ public class SecurityUtil {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
     
-    public static boolean isValidInput(String input, int maxLength) {
-        return input != null && 
-               input.trim().length() > 0 && 
-               input.length() <= maxLength &&
-               !containsSqlInjection(input) &&
-               !containsXss(input);
-    }
-    
-    private static boolean containsSqlInjection(String input) {
-        String[] sqlKeywords = {"'", "\"", ";", "--", "/*", "*/", "xp_", "sp_", "DROP", "DELETE", "INSERT", "UPDATE"};
-        String upperInput = input.toUpperCase();
-        for (String keyword : sqlKeywords) {
-            if (upperInput.contains(keyword.toUpperCase())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private static boolean containsXss(String input) {
-        String[] xssPatterns = {"<script", "</script>", "javascript:", "onload=", "onerror=", "onclick="};
-        String lowerInput = input.toLowerCase();
-        for (String pattern : xssPatterns) {
-            if (lowerInput.contains(pattern)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    // The methods isValidInput, containsSqlInjection, and containsXss have been removed.
+    // Blacklist-based validation for SQLi and XSS is insecure and easily bypassed.
+    //
+    // For SQL Injection: Rely on Spring Data JPA's built-in support for parameterized queries.
+    // For XSS: Validate input based on expected format (e.g., using jakarta.validation annotations on DTOs)
+    // and ensure the frontend performs context-aware output encoding.
 }
