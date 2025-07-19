@@ -104,6 +104,35 @@ public class AuthService {
 
         return new LoginResponse(sessionToken, isFirstTime, customer.getId(), "Login successful");
     }
+    
+    /**
+     * Verify OTP without creating a session or saving to database
+     * Used for simple mobile verification
+     */
+    public boolean verifyOtpOnly(OtpVerifyRequest request) {
+        if (!ValidationUtil.isValidMobile(request) || !ValidationUtil.isValidOtp(request.getOtp())) {
+            throw new BadRequestException("Invalid mobile number or OTP format.");
+        }
+
+        Optional<OtpSession> otpSessionOpt = otpSessionRepository.findByMobileAndVerifiedFalse(request.getMobile());
+
+        if (otpSessionOpt.isEmpty()) {
+            throw new BadRequestException("No active OTP session found. Please request a new OTP.");
+        }
+
+        OtpSession otpSession = otpSessionOpt.get();
+
+        if (!otpSession.getOtp().equals(request.getOtp())) {
+            throw new BadRequestException("The OTP entered is incorrect.");
+        }
+
+        if (otpSession.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("The OTP has expired. Please request a new one.");
+        }
+
+        // Just return true without marking as verified or creating a session
+        return true;
+    }
 
     public LoginResponse googleAuth(GoogleAuthRequest request, String clientType) {
         if (request.getIdToken() == null || request.getIdToken().trim().isEmpty()) {

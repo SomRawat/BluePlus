@@ -34,6 +34,13 @@ public class AuthController {
         LoginResponse response = authService.verifyOtp(request, clientType);
         return new BlueCollarApiResponse<>(response, 200);
     }
+    
+    @PostMapping("/verify-mobile")
+    public BlueCollarApiResponse<OtpVerificationResponse> verifyMobile(@Valid @RequestBody OtpVerifyRequest request) {
+        boolean verified = authService.verifyOtpOnly(request);
+        OtpVerificationResponse response = new OtpVerificationResponse(verified, "Mobile verification successful");
+        return new BlueCollarApiResponse<>(response, 200);
+    }
 
     @PostMapping("/google-auth")
     public BlueCollarApiResponse<LoginResponse> googleAuth(@Valid @RequestBody GoogleAuthRequest request,
