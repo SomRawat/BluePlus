@@ -200,4 +200,16 @@ public class AuthService {
         return customer.getName() == null || customer.getName().trim().isEmpty() ||
                customer.getEmail() == null || customer.getEmail().trim().isEmpty();
     }
+
+    @Transactional(readOnly = true)
+    public Customer getCustomerDetails(String sessionToken) {
+        String customerId = sessionService.getCustomerIdFromToken(sessionToken);
+        
+        Optional<Customer> customerOpt = customerRepository.findById(customerId);
+        if (customerOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Customer not found with ID: " + customerId);
+        }
+        
+        return customerOpt.get();
+    }
 }

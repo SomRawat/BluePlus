@@ -40,11 +40,16 @@ public class AuthController {
     }
 
     @PutMapping("/update-profile")
-    public BlueCollarApiResponse<Customer> updateProfile(@RequestBody UpdateProfileRequest request,
+    public BlueCollarApiResponse<Customer> updateProfile(@Valid @RequestBody UpdateProfileRequest request,
                                                          @RequestHeader("Session-Token") String sessionToken) {
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);
         Customer updatedCustomer = authService.updateProfile(customerId, request);
         return new BlueCollarApiResponse<>(updatedCustomer, 200);
+    }
+    @GetMapping("/profile")
+    public BlueCollarApiResponse<Customer> getCustomerProfile(@RequestHeader("Session-Token") String sessionToken) {
+            Customer customer = authService.getCustomerDetails(sessionToken);
+            return new BlueCollarApiResponse<>(customer, 200);
 
     }
 
