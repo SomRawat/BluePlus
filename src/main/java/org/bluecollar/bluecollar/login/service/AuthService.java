@@ -152,8 +152,26 @@ public class AuthService {
 
         Customer customer = customerOpt.get();
 
+        // Check if mobile number is being changed and if it's already in use
+        if (request.getMobile() != null && !request.getMobile().equals(customer.getMobile())) {
+            Optional<Customer> existingCustomer = customerRepository.findByMobile(request.getMobile());
+            if (existingCustomer.isPresent() && !existingCustomer.get().getId().equals(customerId)) {
+                throw new BadRequestException("Mobile number is already registered with another account");
+            }
+            customer.setMobile(request.getMobile());
+        }
+
         if (request.getName() != null) customer.setName(request.getName());
-        if (request.getEmail() != null) customer.setEmail(request.getEmail());
+        
+        // Check if email is being changed and if it's already in use
+        if (request.getEmail() != null && !request.getEmail().equals(customer.getEmail())) {
+            Optional<Customer> existingCustomer = customerRepository.findByEmail(request.getEmail());
+            if (existingCustomer.isPresent() && !existingCustomer.get().getId().equals(customerId)) {
+                throw new BadRequestException("Email is already registered with another account");
+            }
+            customer.setEmail(request.getEmail());
+        }
+        
         if (request.getPhoneCode() != null) customer.setPhoneCode(request.getPhoneCode());
         if (request.getRelationType() != null) customer.setRelationType(request.getRelationType());
         if (request.getDob() != null) customer.setDob(request.getDob());
