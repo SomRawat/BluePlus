@@ -13,8 +13,8 @@ public class Customer {
     
     @Id
     private String id;
-    
-    @Indexed(unique = true)
+
+    @Indexed(unique = true, sparse = true)
     private String mobile;
     
     private String email;
