@@ -8,9 +8,11 @@ import org.bluecollar.bluecollar.login.repository.OtpSessionRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
 import org.bluecollar.bluecollar.common.util.ValidationUtil;
 import org.bluecollar.bluecollar.common.util.SecurityUtil;
+import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
