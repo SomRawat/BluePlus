@@ -10,7 +10,7 @@ public class OtpVerifyRequest implements MobileRequest {
     private String phoneCode;
 
     @NotBlank(message = "OTP cannot be blank")
-    @Pattern(regexp = "\\d{4}", message = "OTP must be 4 digits")
+    @Pattern(regexp = "\\d{6}", message = "OTP must be 6 digits")
     private String otp;
 
     @Override

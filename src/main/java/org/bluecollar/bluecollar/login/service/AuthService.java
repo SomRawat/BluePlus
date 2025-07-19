@@ -143,8 +143,6 @@ public class AuthService {
                 customer.getEmail(), customer.getName(), customer.getProfilePhoto());
     }
 
-    // It's good practice to manage entity updates inside @Transactional methods.
-    // Consider using Spring Data JPA Auditing (@CreatedDate, @LastModifiedDate) to automatically manage createdAt/updatedAt fields.
     @Transactional
     public Customer updateProfile(String customerId, UpdateProfileRequest request) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
