@@ -93,7 +93,7 @@ public final class ValidationUtil {
     }
 
     public static boolean isValidOtp(String otp) {
-        return otp != null && otp.matches("\\d{4}");
+        return otp != null && otp.matches("\\d{6}");
     }
 
     public static boolean isValidPhoneCode(String phoneCode) {
