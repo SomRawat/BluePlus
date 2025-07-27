@@ -3,6 +3,7 @@ package org.bluecollar.bluecollar.login.service;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.bluecollar.bluecollar.common.exception.BadRequestException;
 import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
+import org.bluecollar.bluecollar.common.service.TwilioService;
 import org.bluecollar.bluecollar.common.util.SecurityUtil;
 import org.bluecollar.bluecollar.common.util.ValidationUtil;
 import org.bluecollar.bluecollar.login.dto.*;
@@ -26,13 +27,15 @@ public class AuthService {
     private final OtpSessionRepository otpSessionRepository;
     private final SessionService sessionService;
     private final GoogleOAuthService googleOAuthService;
+    private final TwilioService twilioService;
 
     @Autowired
-    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, SessionService sessionService, GoogleOAuthService googleOAuthService) {
+    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, SessionService sessionService, GoogleOAuthService googleOAuthService, TwilioService twilioService) {
         this.customerRepository = customerRepository;
         this.otpSessionRepository = otpSessionRepository;
         this.sessionService = sessionService;
         this.googleOAuthService = googleOAuthService;
+        this.twilioService = twilioService;
     }
 
     // Encapsulating OTP logic in a transaction ensures that deleting old OTPs
@@ -52,8 +55,12 @@ public class AuthService {
         OtpSession otpSession = new OtpSession(request.getMobile(), otp);
         otpSessionRepository.save(otpSession);
 
-        // TODO: Integrate with SMS service to send OTP
-        System.out.println("OTP for " + request.getMobile() + ": " + otp);
+        // Send OTP via Twilio SMS
+        String phoneCode = request.getPhoneCode() != null ? request.getPhoneCode() : "+91";
+        String fullPhoneNumber = phoneCode + request.getMobile();
+        String message = "Your BlueCollar verification code is: " + otp;
+        
+        twilioService.sendSms(fullPhoneNumber, message);
 
         return "OTP sent successfully";
     }
