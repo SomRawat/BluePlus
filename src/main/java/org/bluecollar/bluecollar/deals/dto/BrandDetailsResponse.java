@@ -14,6 +14,7 @@ public class BrandDetailsResponse {
     private List<String> termsAndConditions;
     private List<FAQDto> faq;
     private String redeemLink;
+    private boolean redeemed;
     
     public BrandDetailsResponse() {}
     
@@ -50,6 +51,8 @@ public class BrandDetailsResponse {
     
     public String getRedeemLink() { return redeemLink; }
     public void setRedeemLink(String redeemLink) { this.redeemLink = redeemLink; }
+    public boolean isRedeemed() { return redeemed; }
+    public void setRedeemed(boolean redeemed) { this.redeemed = redeemed; }
     
     public static class FAQDto {
         private String question;

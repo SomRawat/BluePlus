@@ -10,4 +10,6 @@ import java.util.List;
 public interface AdminRepository extends MongoRepository<Admin, String> {
     Optional<Admin> findByEmailAndActive(String email, boolean active);
     List<Admin> findByActive(boolean active);
+
+    Optional<Admin> findByEmail(String email);
 }

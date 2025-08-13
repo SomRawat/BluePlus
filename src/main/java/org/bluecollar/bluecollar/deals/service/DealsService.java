@@ -1,10 +1,14 @@
 package org.bluecollar.bluecollar.deals.service;
 
+import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.deals.dto.*;
 import org.bluecollar.bluecollar.deals.model.*;
 import org.bluecollar.bluecollar.deals.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +25,15 @@ public class DealsService {
     
     @Autowired
     private CategoryRepository categoryRepository;
+    
+    @Autowired
+    private HomePageRepository homePageRepository;
+    
+    @Autowired
+    private PLPRepository plpRepository;
+    
+    @Autowired
+    private PDPRepository pdpRepository;
     
     public HomePageResponse getHomePage() {
         HomePageResponse response = new HomePageResponse();
@@ -45,7 +58,7 @@ public class DealsService {
     
     public BrandDetailsResponse getBrandDetails(String brandId) {
         Brand brand = brandRepository.findByIdAndActiveTrue(brandId)
-                .orElseThrow(() -> new RuntimeException("Brand not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Brand not found"));
         
         BrandDetailsResponse response = new BrandDetailsResponse();
         response.setBrandName(brand.getName());
@@ -67,13 +80,16 @@ public class DealsService {
         }
         
         response.setRedeemLink(brand.getRedeemLink());
-        
+        // Set redeemed flag if there is an active unredeemed coupon for this brand for the user
+        // This requires session/caller context; left false by default. Controllers can set based on session.
+        response.setRedeemed(false);
+
         return response;
     }
     
     public CategoryDealsResponse getCategoryDeals(String categoryId, String tab) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         
         CategoryDealsResponse response = new CategoryDealsResponse();
         response.setTitle(category.getLabel());
@@ -85,6 +101,78 @@ public class DealsService {
         response.setOffers(brands.stream().map(this::toOfferDto).collect(Collectors.toList()));
         
         return response;
+    }
+    
+    // Admin methods for managing deals
+    @Transactional
+    public HomePageResponse createHomePage(HomePageData homePageData) {
+        // Clear existing home page data
+        homePageRepository.deleteAll();
+        
+        // Create new home page
+        HomePage homePage = new HomePage(homePageData, true);
+        
+        homePageRepository.save(homePage);
+        return getHomePage();
+    }
+    
+    @Transactional
+    public HomePageResponse updateHomePage(HomePageData homePageData) {
+        return createHomePage(homePageData); // For now, just recreate
+    }
+    
+    @Transactional
+    public CategoryDealsResponse createCategoryDeals(String categoryId, PLPData plpData) {
+        PLP plp = new PLP(categoryId, plpData, true);
+        
+        plpRepository.save(plp);
+        return getCategoryDeals(categoryId, plpData.getActiveTab());
+    }
+    
+    @Transactional
+    public CategoryDealsResponse updateCategoryDeals(String categoryId, PLPData plpData) {
+        // Delete existing PLP for this category
+        plpRepository.deleteByCategoryId(categoryId);
+        return createCategoryDeals(categoryId, plpData);
+    }
+    
+    @Transactional
+    public BrandDetailsResponse createBrandDetails(String brandId, PDPData pdpData) {
+        PDP pdp = new PDP(brandId, pdpData, true);
+        
+        pdpRepository.save(pdp);
+        return getBrandDetails(brandId);
+    }
+    
+    @Transactional
+    public BrandDetailsResponse updateBrandDetails(String brandId, PDPData pdpData) {
+        // Delete existing PDP for this brand
+        pdpRepository.deleteByBrandId(brandId);
+        return createBrandDetails(brandId, pdpData);
+    }
+    
+    @Transactional
+    public void deleteCategoryDeals(String categoryId) {
+        plpRepository.deleteByCategoryId(categoryId);
+    }
+    
+    @Transactional
+    public void deleteBrandDetails(String brandId) {
+        pdpRepository.deleteByBrandId(brandId);
+    }
+    
+    public List<String> listAllDeals() {
+        List<String> deals = new java.util.ArrayList<>();
+        
+        // Add all category deals
+        List<PLP> plps = plpRepository.findAll();
+        deals.addAll(plps.stream().map(plp -> "Category: " + plp.getCategoryId()).collect(Collectors.toList()));
+        
+        // Add all brand deals
+        List<PDP> pdps = pdpRepository.findAll();
+        deals.addAll(pdps.stream().map(pdp -> "Brand: " + pdp.getBrandId()).collect(Collectors.toList()));
+        
+        return deals;
     }
     
     private HomePageResponse.BannerDto toBannerDto(Banner banner) {

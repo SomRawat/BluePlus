@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PDPRepository extends MongoRepository<PDP, String> {
     PDP findByBrandIdAndActiveTrue(String brandId);
+    void deleteByBrandId(String brandId);
 }

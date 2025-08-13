@@ -3,6 +3,7 @@ package org.bluecollar.bluecollar.deals.dto;
 import java.util.List;
 
 public class PDPData {
+    private String categoryId;
     private String brandName;
     private String bannerLink;
     private String brandDescription;
@@ -14,6 +15,7 @@ public class PDPData {
     private List<String> termsAndConditions;
     private List<FAQItem> faq;
     private String redeemLink;
+    private boolean redeemed;
 
     public static class FAQItem {
         private String question;
@@ -33,6 +35,9 @@ public class PDPData {
     }
 
     public PDPData() {}
+
+    public String getCategoryId() { return categoryId; }
+    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
 
     public String getBrandName() { return brandName; }
     public void setBrandName(String brandName) { this.brandName = brandName; }
@@ -56,4 +61,6 @@ public class PDPData {
     public void setFaq(List<FAQItem> faq) { this.faq = faq; }
     public String getRedeemLink() { return redeemLink; }
     public void setRedeemLink(String redeemLink) { this.redeemLink = redeemLink; }
+    public boolean isRedeemed() { return redeemed; }
+    public void setRedeemed(boolean redeemed) { this.redeemed = redeemed; }
 }
