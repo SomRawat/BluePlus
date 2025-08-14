@@ -1,6 +1,7 @@
 package org.bluecollar.bluecollar.deals.dto;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class PDPData {
     private String categoryId;
@@ -34,7 +35,13 @@ public class PDPData {
         public void setAnswer(String answer) { this.answer = answer; }
     }
 
-    public PDPData() {}
+    public PDPData() {
+        this.howItWorksBullets = new ArrayList<>();
+        this.benefits = new ArrayList<>();
+        this.howToRedeemBullets = new ArrayList<>();
+        this.termsAndConditions = new ArrayList<>();
+        this.faq = new ArrayList<>();
+    }
 
     public String getCategoryId() { return categoryId; }
     public void setCategoryId(String categoryId) { this.categoryId = categoryId; }

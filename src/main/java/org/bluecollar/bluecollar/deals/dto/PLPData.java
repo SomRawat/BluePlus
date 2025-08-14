@@ -1,6 +1,7 @@
 package org.bluecollar.bluecollar.deals.dto;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class PLPData {
     private String title;
@@ -37,7 +38,10 @@ public class PLPData {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     }
 
-    public PLPData() {}
+    public PLPData() {
+        this.tabs = new ArrayList<>();
+        this.offers = new ArrayList<>();
+    }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

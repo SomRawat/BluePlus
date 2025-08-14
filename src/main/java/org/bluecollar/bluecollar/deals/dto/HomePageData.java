@@ -1,6 +1,7 @@
 package org.bluecollar.bluecollar.deals.dto;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class HomePageData {
     private List<BannerItem> banners;
@@ -100,7 +101,12 @@ public class HomePageData {
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
     }
 
-    public HomePageData() {}
+    public HomePageData() {
+        this.banners = new ArrayList<>();
+        this.popularBrands = new ArrayList<>();
+        this.handpickedDeals = new ArrayList<>();
+        this.categories = new ArrayList<>();
+    }
 
     public List<BannerItem> getBanners() { return banners; }
     public void setBanners(List<BannerItem> banners) { this.banners = banners; }
