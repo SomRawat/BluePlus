@@ -59,7 +59,6 @@ public class AdminController {
     public BlueCollarApiResponse<AdminResponse> createAdmin(@Valid @RequestBody CreateAdminRequest request,
                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
         AdminResponse response = adminService.createAdmin(request, sessionToken);
-        logger.info("Admin created successfully with email: {}", request.getEmail());
         return new BlueCollarApiResponse<>(response, 200);
     }
 

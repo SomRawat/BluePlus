@@ -20,19 +20,19 @@ public class PageDataController {
     @GetMapping("/home")
     public BlueCollarApiResponse<HomePageData> getHomePage() {
         HomePageData data = pageDataFactory.getHomePageData();
-        return new BlueCollarApiResponse<>(data, data != null ? 200 : 404);
+        return new BlueCollarApiResponse<>(data != null ? data : new HomePageData(), 200);
     }
     
     @GetMapping("/category/{categoryId}")
     public BlueCollarApiResponse<PLPData> getCategoryPage(@PathVariable String categoryId) {
         PLPData data = pageDataFactory.getPLPData(categoryId);
-        return new BlueCollarApiResponse<>(data, data != null ? 200 : 404);
+        return new BlueCollarApiResponse<>(data != null ? data : new PLPData(), 200);
     }
     
     @GetMapping("/brand/{brandId}")
     public BlueCollarApiResponse<PDPData> getBrandPage(@PathVariable String brandId) {
         PDPData data = pageDataFactory.getPDPData(brandId);
-        return new BlueCollarApiResponse<>(data, data != null ? 200 : 404);
+        return new BlueCollarApiResponse<>(data != null ? data : new PDPData(), 200);
     }
     
     @PostMapping("/home")
