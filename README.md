@@ -147,9 +147,10 @@ Header: Admin-Session-Token: <session-token>
   "role": "DEAL_MANAGER"
 }
 
-# List All Admins
+# List Admins (role-scoped)
 GET /api/admin/list
 Header: Admin-Session-Token: <session-token>
+Note: SUPER_ADMIN sees all; ADMIN sees only VIEWERs
 
 # Update Admin Role
 PUT /api/admin/{adminId}/role

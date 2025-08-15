@@ -19,27 +19,23 @@ public class PageDataService {
     private PDPRepository pdpRepository;
     
     public void saveHomePageData(HomePageData data) {
-        // Deactivate existing home page
+        // Upsert: deactivate current active and insert new
         var existing = homePageRepository.findByActiveTrue();
         if (existing != null) {
             existing.setActive(false);
             homePageRepository.save(existing);
         }
-        
-        // Save new home page
         HomePage homePage = new HomePage(data, true);
         homePageRepository.save(homePage);
     }
     
     public void savePLPData(String categoryId, PLPData data) {
-        // Deactivate existing PLP for category
+        // Upsert by category key
         var existing = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
         if (existing != null) {
             existing.setActive(false);
             plpRepository.save(existing);
         }
-        
-        // Save new PLP
         PLP plp = new PLP(categoryId, data, true);
         plpRepository.save(plp);
     }
@@ -58,14 +54,12 @@ public class PageDataService {
                 plpRepository.save(newPlp);
             }
         }
-        // Deactivate existing PDP for brand
+        // Upsert by brand key
         var existing = pdpRepository.findByBrandIdAndActiveTrue(brandId);
         if (existing != null) {
             existing.setActive(false);
             pdpRepository.save(existing);
         }
-        
-        // Save new PDP
         PDP pdp = new PDP(brandId, data, true);
         pdpRepository.save(pdp);
     }

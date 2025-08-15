@@ -15,6 +15,7 @@ public class BrandDetailsResponse {
     private List<FAQDto> faq;
     private String redeemLink;
     private boolean redeemed;
+    private boolean isActive = true;
     
     public BrandDetailsResponse() {}
     
@@ -53,6 +54,9 @@ public class BrandDetailsResponse {
     public void setRedeemLink(String redeemLink) { this.redeemLink = redeemLink; }
     public boolean isRedeemed() { return redeemed; }
     public void setRedeemed(boolean redeemed) { this.redeemed = redeemed; }
+    
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
     
     public static class FAQDto {
         private String question;

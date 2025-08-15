@@ -68,6 +68,12 @@ public class AdminSessionService {
         }
     }
     
+    public void validateCanViewDeals(String sessionToken) {
+        AdminSession session = getSession(sessionToken);
+        // All roles can view deals (SUPER_ADMIN, ADMIN, VIEWER)
+        // This method just validates the session exists
+    }
+    
     public void logout(String sessionToken) {
         sessions.remove(sessionToken);
     }

@@ -3,10 +3,13 @@ package org.bluecollar.bluecollar.admin.service;
 import org.bluecollar.bluecollar.admin.dto.*;
 import org.bluecollar.bluecollar.admin.model.Admin;
 import org.bluecollar.bluecollar.admin.model.AdminRole;
+import org.bluecollar.bluecollar.admin.model.PasswordResetToken;
 import org.bluecollar.bluecollar.admin.repository.AdminRepository;
+import org.bluecollar.bluecollar.admin.repository.PasswordResetTokenRepository;
 import org.bluecollar.bluecollar.common.exception.BadRequestException;
 import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.common.exception.UnauthorizedException;
+import org.bluecollar.bluecollar.common.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,12 +27,18 @@ public class AdminService {
     private final AdminRepository adminRepository;
     private final AdminSessionService sessionService;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
     
     @Autowired
-    public AdminService(AdminRepository adminRepository, AdminSessionService sessionService, PasswordEncoder passwordEncoder) {
+    public AdminService(AdminRepository adminRepository, AdminSessionService sessionService, 
+                       PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository,
+                       EmailService emailService) {
         this.adminRepository = adminRepository;
         this.sessionService = sessionService;
         this.passwordEncoder = passwordEncoder;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailService = emailService;
     }
 
     // Expose session service for controllers needing role-aware lists
@@ -99,13 +109,18 @@ public class AdminService {
     
     @Transactional(readOnly = true)
     public List<AdminResponse> getAllAdmins(String sessionToken) {
-        // Only SUPER_ADMIN can view all admins
+        // SUPER_ADMIN: see all; ADMIN: see only VIEWERs
         sessionService.validateCanManageUsers(sessionToken);
-        
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+
         List<Admin> admins = adminRepository.findAll();
-        return admins.stream()
-                .map(AdminResponse::new)
-                .collect(Collectors.toList());
+        if (callerRole == AdminRole.ADMIN) {
+            admins = admins.stream()
+                    .filter(a -> a.getRole() == AdminRole.VIEWER)
+                    .collect(Collectors.toList());
+        }
+        return admins.stream().map(AdminResponse::new).collect(Collectors.toList());
     }
     
     @Transactional
@@ -180,16 +195,31 @@ public class AdminService {
     public String deleteAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
-        
+
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
-        
-        Admin admin = adminOpt.get();
-        
+
+        Admin target = adminOpt.get();
+
+        // Admin delete rules:
+        // - ADMIN can delete only VIEWERs
+        // - ADMIN cannot delete themselves
+        if (callerRole == AdminRole.ADMIN) {
+            if (caller.getAdminId().equals(adminId)) {
+                throw new UnauthorizedException("ADMIN cannot delete self");
+            }
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only delete VIEWER");
+            }
+        }
+
         // Don't allow deleting the last SUPER_ADMIN
-        if (admin.getRole() == AdminRole.SUPER_ADMIN) {
+        if (target.getRole() == AdminRole.SUPER_ADMIN) {
             long superAdminCount = adminRepository.findAll().stream()
                     .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
                     .count();
@@ -197,8 +227,8 @@ public class AdminService {
                 throw new BadRequestException("Cannot delete the last SUPER_ADMIN");
             }
         }
-        
-        adminRepository.delete(admin);
+
+        adminRepository.delete(target);
         return "Admin deleted successfully";
     }
     
@@ -254,6 +284,66 @@ public class AdminService {
     public String logout(String sessionToken) {
         sessionService.logout(sessionToken);
         return "Logged out successfully";
+    }
+    
+    @Transactional
+    public String forgotPassword(ForgotPasswordRequest request) {
+        Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
+        if (adminOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Admin not found with email: " + request.getEmail());
+        }
+        
+        Admin admin = adminOpt.get();
+        if (!admin.isActive()) {
+            throw new BadRequestException("Account is deactivated");
+        }
+        
+        // Delete any existing tokens for this email
+        passwordResetTokenRepository.deleteByEmail(request.getEmail());
+        
+        // Generate 6-digit OTP
+        String otp = String.format("%06d", new Random().nextInt(1000000));
+        
+        // Save token
+        PasswordResetToken token = new PasswordResetToken(request.getEmail(), otp);
+        passwordResetTokenRepository.save(token);
+        
+        // Send email
+        emailService.sendPasswordResetOTP(request.getEmail(), otp);
+        
+        return "Password reset OTP sent to email";
+    }
+    
+    @Transactional
+    public String resetPassword(ResetPasswordRequest request) {
+        // Find admin by email
+        Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
+        if (adminOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Admin not found with email: " + request.getEmail());
+        }
+        
+        Admin admin = adminOpt.get();
+        
+        // Validate OTP
+        Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository
+                .findByEmailAndOtpAndUsedFalseAndExpiryTimeAfter(request.getEmail(), request.getOtp(), LocalDateTime.now());
+        
+        if (tokenOpt.isEmpty()) {
+            throw new BadRequestException("Invalid or expired OTP");
+        }
+        
+        PasswordResetToken token = tokenOpt.get();
+        
+        // Update password
+        admin.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        admin.setUpdatedAt(LocalDateTime.now());
+        adminRepository.save(admin);
+        
+        // Mark token as used
+        token.setUsed(true);
+        passwordResetTokenRepository.save(token);
+        
+        return "Password reset successfully";
     }
     
     // Initialize default SUPER_ADMIN if no admins exist

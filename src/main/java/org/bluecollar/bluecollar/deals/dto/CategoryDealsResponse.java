@@ -7,6 +7,7 @@ public class CategoryDealsResponse {
     private List<String> tabs;
     private String activeTab;
     private List<OfferDto> offers;
+    private boolean isActive = true;
     
     public CategoryDealsResponse() {}
     
@@ -22,6 +23,9 @@ public class CategoryDealsResponse {
     
     public List<OfferDto> getOffers() { return offers; }
     public void setOffers(List<OfferDto> offers) { this.offers = offers; }
+    
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
     
     public static class OfferDto {
         private String id;

@@ -38,6 +38,10 @@ public enum AdminRole {
         return this == SUPER_ADMIN || this == ADMIN;
     }
     
+    public boolean canViewDeals() {
+        return true; // All roles can view deals
+    }
+    
     public boolean canViewReports() {
         return this == SUPER_ADMIN || this == ADMIN;
     }

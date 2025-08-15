@@ -53,7 +53,20 @@ public class DealsService {
         List<Category> categories = categoryRepository.findByActiveTrue();
         response.setCategories(categories.stream().map(this::toCategoryDto).collect(Collectors.toList()));
         
+        // Set isActive from home page data if exists
+        List<HomePage> homePages = homePageRepository.findAll();
+        if (!homePages.isEmpty()) {
+            response.setActive(homePages.get(0).getData().isActive());
+        }
+        
         return response;
+    }
+
+    // Admin panel helpers to fetch all stored raw page data
+    public List<HomePageData> getAllHomePagesData() {
+        return homePageRepository.findAll().stream()
+                .map(HomePage::getData)
+                .collect(Collectors.toList());
     }
     
     public BrandDetailsResponse getBrandDetails(String brandId) {
@@ -80,10 +93,15 @@ public class DealsService {
         }
         
         response.setRedeemLink(brand.getRedeemLink());
-        // Set redeemed flag if there is an active unredeemed coupon for this brand for the user
-        // This requires session/caller context; left false by default. Controllers can set based on session.
+        // Set redeemed flag default
         response.setRedeemed(false);
-
+        
+        // Set isActive from PDP data if exists
+        PDP pdp = pdpRepository.findByBrandIdAndActiveTrue(brandId);
+        if (pdp != null) {
+            response.setActive(pdp.getData().isActive());
+        }
+        
         return response;
     }
     
@@ -100,19 +118,51 @@ public class DealsService {
         List<Brand> brands = brandRepository.findByActiveTrue();
         response.setOffers(brands.stream().map(this::toOfferDto).collect(Collectors.toList()));
         
+        // Set isActive from PLP data if exists
+        PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
+        if (plp != null) {
+            response.setActive(plp.getData().isActive());
+        }
+        
         return response;
+    }
+
+    public List<PLPData> getAllCategoryPagesData() {
+        return plpRepository.findAll().stream()
+                .map(PLP::getData)
+                .collect(Collectors.toList());
+    }
+
+    public List<PDPData> getAllBrandPagesData() {
+        return pdpRepository.findAll().stream()
+                .map(PDP::getData)
+                .collect(Collectors.toList());
     }
     
     // Admin methods for managing deals
     @Transactional
     public HomePageResponse createHomePage(HomePageData homePageData) {
-        // Clear existing home page data
-        homePageRepository.deleteAll();
+        List<HomePage> existingPages = homePageRepository.findAll();
         
-        // Create new home page
-        HomePage homePage = new HomePage(homePageData, true);
+        if (!existingPages.isEmpty()) {
+            // Update existing home page
+            HomePage existingPage = existingPages.get(0);
+            HomePageData existingData = existingPage.getData();
+            
+            // Update only provided fields
+            if (homePageData.getBanners() != null) existingData.setBanners(homePageData.getBanners());
+            if (homePageData.getPopularBrands() != null) existingData.setPopularBrands(homePageData.getPopularBrands());
+            if (homePageData.getHandpickedDeals() != null) existingData.setHandpickedDeals(homePageData.getHandpickedDeals());
+            if (homePageData.getCategories() != null) existingData.setCategories(homePageData.getCategories());
+            existingData.setActive(homePageData.isActive());
+            
+            homePageRepository.save(existingPage);
+        } else {
+            // Create new home page
+            HomePage homePage = new HomePage(homePageData, homePageData.isActive());
+            homePageRepository.save(homePage);
+        }
         
-        homePageRepository.save(homePage);
         return getHomePage();
     }
     
@@ -123,32 +173,54 @@ public class DealsService {
     
     @Transactional
     public CategoryDealsResponse createCategoryDeals(String categoryId, PLPData plpData) {
-        PLP plp = new PLP(categoryId, plpData, true);
+        PLP existingPlp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
         
-        plpRepository.save(plp);
+        if (existingPlp != null) {
+            // Update existing record with only provided fields
+            PLPData existingData = existingPlp.getData();
+            if (plpData.getTitle() != null) existingData.setTitle(plpData.getTitle());
+            if (plpData.getTabs() != null) existingData.setTabs(plpData.getTabs());
+            if (plpData.getActiveTab() != null) existingData.setActiveTab(plpData.getActiveTab());
+            if (plpData.getOffers() != null) existingData.setOffers(plpData.getOffers());
+            existingData.setActive(plpData.isActive());
+            plpRepository.save(existingPlp);
+        } else {
+            // Create new record
+            PLP plp = new PLP(categoryId, plpData, true);
+            plpRepository.save(plp);
+        }
+        
         return getCategoryDeals(categoryId, plpData.getActiveTab());
     }
     
     @Transactional
-    public CategoryDealsResponse updateCategoryDeals(String categoryId, PLPData plpData) {
-        // Delete existing PLP for this category
-        plpRepository.deleteByCategoryId(categoryId);
-        return createCategoryDeals(categoryId, plpData);
-    }
-    
-    @Transactional
     public BrandDetailsResponse createBrandDetails(String brandId, PDPData pdpData) {
-        PDP pdp = new PDP(brandId, pdpData, true);
+        PDP existingPdp = pdpRepository.findByBrandIdAndActiveTrue(brandId);
         
-        pdpRepository.save(pdp);
+        if (existingPdp != null) {
+            // Update existing record with only provided fields
+            PDPData existingData = existingPdp.getData();
+            if (pdpData.getCategoryId() != null) existingData.setCategoryId(pdpData.getCategoryId());
+            if (pdpData.getBrandName() != null) existingData.setBrandName(pdpData.getBrandName());
+            if (pdpData.getBannerLink() != null) existingData.setBannerLink(pdpData.getBannerLink());
+            if (pdpData.getBrandDescription() != null) existingData.setBrandDescription(pdpData.getBrandDescription());
+            if (pdpData.getDiscountText() != null) existingData.setDiscountText(pdpData.getDiscountText());
+            if (pdpData.getValidTill() != null) existingData.setValidTill(pdpData.getValidTill());
+            if (pdpData.getHowItWorksBullets() != null) existingData.setHowItWorksBullets(pdpData.getHowItWorksBullets());
+            if (pdpData.getBenefits() != null) existingData.setBenefits(pdpData.getBenefits());
+            if (pdpData.getHowToRedeemBullets() != null) existingData.setHowToRedeemBullets(pdpData.getHowToRedeemBullets());
+            if (pdpData.getTermsAndConditions() != null) existingData.setTermsAndConditions(pdpData.getTermsAndConditions());
+            if (pdpData.getFaq() != null) existingData.setFaq(pdpData.getFaq());
+            if (pdpData.getRedeemLink() != null) existingData.setRedeemLink(pdpData.getRedeemLink());
+            existingData.setActive(pdpData.isActive());
+            pdpRepository.save(existingPdp);
+        } else {
+            // Create new record
+            PDP pdp = new PDP(brandId, pdpData, true);
+            pdpRepository.save(pdp);
+        }
+        
         return getBrandDetails(brandId);
-    }
-    
-    @Transactional
-    public BrandDetailsResponse updateBrandDetails(String brandId, PDPData pdpData) {
-        // Delete existing PDP for this brand
-        pdpRepository.deleteByBrandId(brandId);
-        return createBrandDetails(brandId, pdpData);
     }
     
     @Transactional
@@ -159,6 +231,11 @@ public class DealsService {
     @Transactional
     public void deleteBrandDetails(String brandId) {
         pdpRepository.deleteByBrandId(brandId);
+    }
+    
+    @Transactional
+    public void deleteHomePage() {
+        homePageRepository.deleteAll();
     }
     
     public List<String> listAllDeals() {

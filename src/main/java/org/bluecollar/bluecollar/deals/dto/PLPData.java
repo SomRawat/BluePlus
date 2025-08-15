@@ -38,6 +38,8 @@ public class PLPData {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     }
 
+    private boolean isActive = true;
+
     public PLPData() {
         this.tabs = new ArrayList<>();
         this.offers = new ArrayList<>();
@@ -51,4 +53,6 @@ public class PLPData {
     public void setActiveTab(String activeTab) { this.activeTab = activeTab; }
     public List<OfferItem> getOffers() { return offers; }
     public void setOffers(List<OfferItem> offers) { this.offers = offers; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
 }

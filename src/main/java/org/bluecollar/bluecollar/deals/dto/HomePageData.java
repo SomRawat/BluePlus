@@ -101,6 +101,8 @@ public class HomePageData {
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
     }
 
+    private boolean isActive = true;
+
     public HomePageData() {
         this.banners = new ArrayList<>();
         this.popularBrands = new ArrayList<>();
@@ -116,4 +118,6 @@ public class HomePageData {
     public void setHandpickedDeals(List<HandpickedDeal> handpickedDeals) { this.handpickedDeals = handpickedDeals; }
     public List<CategoryItem> getCategories() { return categories; }
     public void setCategories(List<CategoryItem> categories) { this.categories = categories; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
 }

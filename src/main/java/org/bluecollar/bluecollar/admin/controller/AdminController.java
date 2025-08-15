@@ -6,8 +6,6 @@ import org.bluecollar.bluecollar.admin.model.Admin;
 import org.bluecollar.bluecollar.admin.model.AdminRole;
 import org.bluecollar.bluecollar.admin.service.AdminService;
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +16,6 @@ import java.util.List;
 @RequestMapping("/api/admin")
 @Validated
 public class AdminController {
-
-    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     private final AdminService adminService;
 
@@ -44,14 +40,12 @@ public class AdminController {
     @GetMapping("/profile")
     public BlueCollarApiResponse<AdminResponse> getAdminProfile(@RequestHeader("Admin-Session-Token") String sessionToken) {
         AdminResponse response = adminService.getAdminProfile(sessionToken);
-        logger.info("Admin profile fetched successfully");
         return new BlueCollarApiResponse<>(response, 200);
     }
 
     @GetMapping("/list")
     public BlueCollarApiResponse<List<AdminResponse>> getAllAdmins(@RequestHeader("Admin-Session-Token") String sessionToken) {
         List<AdminResponse> response = adminService.getAllAdmins(sessionToken);
-        logger.info("All admins fetched successfully");
         return new BlueCollarApiResponse<>(response, 200);
     }
 
@@ -66,9 +60,7 @@ public class AdminController {
     public BlueCollarApiResponse<AdminResponse> updateAdmin(@PathVariable String adminId,
                                                             @Valid @RequestBody Admin adminUpdate,
                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
-        logger.info("Updating admin with ID: {}", adminId);
         AdminResponse response = adminService.updateAdmin(adminId, adminUpdate, sessionToken);
-        logger.info("Admin updated successfully with ID: {}", adminId);
         return new BlueCollarApiResponse<>(response, 200);
 
     }
@@ -78,7 +70,6 @@ public class AdminController {
                                                                 @Valid @RequestBody UpdateAdminRoleRequest request,
                                                                 @RequestHeader("Admin-Session-Token") String sessionToken) {
         AdminResponse response = adminService.updateAdminRole(adminId, request, sessionToken);
-        logger.info("Admin role updated successfully for ID: {}", adminId);
         return new BlueCollarApiResponse<>(response, 200);
     }
 
@@ -86,7 +77,6 @@ public class AdminController {
     public BlueCollarApiResponse<String> activateAdmin(@PathVariable String adminId,
                                                        @RequestHeader("Admin-Session-Token") String sessionToken) {
         String message = adminService.activateAdmin(adminId, sessionToken);
-        logger.info("Admin activated successfully with ID: {}", adminId);
         return new BlueCollarApiResponse<>(message, 200);
     }
 
@@ -94,7 +84,6 @@ public class AdminController {
     public BlueCollarApiResponse<String> deactivateAdmin(@PathVariable String adminId,
                                                          @RequestHeader("Admin-Session-Token") String sessionToken) {
         String message = adminService.deactivateAdmin(adminId, sessionToken);
-        logger.info("Admin deactivated successfully with ID: {}", adminId);
         return new BlueCollarApiResponse<>(message, 200);
     }
 
@@ -102,7 +91,6 @@ public class AdminController {
     public BlueCollarApiResponse<String> deleteAdmin(@PathVariable String adminId,
                                                      @RequestHeader("Admin-Session-Token") String sessionToken) {
         String message = adminService.deleteAdmin(adminId, sessionToken);
-        logger.info("Admin deleted successfully with ID: {}", adminId);
         return new BlueCollarApiResponse<>(message, 200);
     }
 
@@ -119,5 +107,17 @@ public class AdminController {
             roles = new AdminRole[]{};
         }
         return new BlueCollarApiResponse<>(roles, 200);
+    }
+    
+    @PostMapping("/forgot-password")
+    public BlueCollarApiResponse<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        String message = adminService.forgotPassword(request);
+        return new BlueCollarApiResponse<>(message, 200);
+    }
+    
+    @PostMapping("/reset-password")
+    public BlueCollarApiResponse<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        String message = adminService.resetPassword(request);
+        return new BlueCollarApiResponse<>(message, 200);
     }
 }

@@ -17,6 +17,7 @@ public class PDPData {
     private List<FAQItem> faq;
     private String redeemLink;
     private boolean redeemed;
+    private boolean isActive = true;
 
     public static class FAQItem {
         private String question;
@@ -34,6 +35,8 @@ public class PDPData {
         public String getAnswer() { return answer; }
         public void setAnswer(String answer) { this.answer = answer; }
     }
+
+
 
     public PDPData() {
         this.howItWorksBullets = new ArrayList<>();
@@ -70,4 +73,6 @@ public class PDPData {
     public void setRedeemLink(String redeemLink) { this.redeemLink = redeemLink; }
     public boolean isRedeemed() { return redeemed; }
     public void setRedeemed(boolean redeemed) { this.redeemed = redeemed; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
 }
