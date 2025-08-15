@@ -107,8 +107,17 @@ public class AdminController {
     }
 
     @GetMapping("/roles")
-    public BlueCollarApiResponse<AdminRole[]> getAvailableRoles() {
-        AdminRole[] roles = AdminRole.values();
+    public BlueCollarApiResponse<AdminRole[]> getAvailableRoles(@RequestHeader("Admin-Session-Token") String sessionToken) {
+        var session = adminService.getSessionService().getSession(sessionToken);
+        AdminRole callerRole = session.getRole();
+        AdminRole[] roles;
+        if (callerRole == AdminRole.SUPER_ADMIN) {
+            roles = new AdminRole[]{AdminRole.ADMIN, AdminRole.VIEWER};
+        } else if (callerRole == AdminRole.ADMIN) {
+            roles = new AdminRole[]{AdminRole.VIEWER};
+        } else {
+            roles = new AdminRole[]{};
+        }
         return new BlueCollarApiResponse<>(roles, 200);
     }
 }

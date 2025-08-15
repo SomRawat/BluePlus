@@ -30,6 +30,11 @@ public class AdminService {
         this.sessionService = sessionService;
         this.passwordEncoder = passwordEncoder;
     }
+
+    // Expose session service for controllers needing role-aware lists
+    public AdminSessionService getSessionService() {
+        return sessionService;
+    }
     
     @Transactional
     public String adminLogin(AdminLoginRequest request) {
@@ -62,12 +67,31 @@ public class AdminService {
             throw new BadRequestException("Email already registered");
         }
         
+        AdminSessionService.AdminSession creator = sessionService.getSession(sessionToken);
         Admin admin = new Admin();
         admin.setEmail(request.getEmail());
         admin.setPassword(passwordEncoder.encode(request.getPassword()));
         admin.setName(request.getName());
+        // Role assignment rules:
+        // - SUPER_ADMIN can create ADMIN or VIEWER (but not another SUPER_ADMIN if one already exists)
+        // - ADMIN can create only VIEWER
+        if (creator.getRole() == AdminRole.ADMIN) {
+            if (request.getRole() != AdminRole.VIEWER) {
+                throw new BadRequestException("ADMIN can only create VIEWER");
+            }
+        }
+        if (creator.getRole() == AdminRole.SUPER_ADMIN) {
+            if (request.getRole() == AdminRole.SUPER_ADMIN) {
+                long superAdminCount = adminRepository.findAll().stream()
+                        .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
+                        .count();
+                if (superAdminCount >= 1) {
+                    throw new BadRequestException("A SUPER_ADMIN already exists");
+                }
+            }
+        }
         admin.setRole(request.getRole());
-        admin.setCreatedBy(sessionService.getSession(sessionToken).getAdminId());
+        admin.setCreatedBy(creator.getAdminId());
         
         Admin savedAdmin = adminRepository.save(admin);
         return new AdminResponse(savedAdmin);
@@ -88,6 +112,8 @@ public class AdminService {
     public AdminResponse updateAdminRole(String adminId, UpdateAdminRoleRequest request, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
+        // Enforce role update rules: ADMIN cannot assign roles other than VIEWER
+        AdminSessionService.AdminSession updater = sessionService.getSession(sessionToken);
         
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
@@ -95,6 +121,17 @@ public class AdminService {
         }
         
         Admin admin = adminOpt.get();
+        if (updater.getRole() == AdminRole.ADMIN && request.getRole() != AdminRole.VIEWER) {
+            throw new BadRequestException("ADMIN can only set role to VIEWER");
+        }
+        if (request.getRole() == AdminRole.SUPER_ADMIN) {
+            long superAdminCount = adminRepository.findAll().stream()
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN && !a.getId().equals(adminId))
+                    .count();
+            if (superAdminCount >= 1) {
+                throw new BadRequestException("A SUPER_ADMIN already exists");
+            }
+        }
         admin.setRole(request.getRole());
         admin.setUpdatedAt(LocalDateTime.now());
         

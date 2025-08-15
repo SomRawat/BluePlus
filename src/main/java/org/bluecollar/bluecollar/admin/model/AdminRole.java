@@ -2,8 +2,7 @@ package org.bluecollar.bluecollar.admin.model;
 
 public enum AdminRole {
     SUPER_ADMIN("SUPER_ADMIN", "Full access to all features including user management"),
-    ADMIN("ADMIN", "Can manage deals and view reports"),
-    DEAL_MANAGER("DEAL_MANAGER", "Can only manage deals"),
+    ADMIN("ADMIN", "Can manage deals and limited user actions"),
     VIEWER("VIEWER", "Read-only access to view data");
     
     private final String role;
@@ -36,7 +35,7 @@ public enum AdminRole {
     }
     
     public boolean canManageDeals() {
-        return this == SUPER_ADMIN || this == ADMIN || this == DEAL_MANAGER;
+        return this == SUPER_ADMIN || this == ADMIN;
     }
     
     public boolean canViewReports() {
