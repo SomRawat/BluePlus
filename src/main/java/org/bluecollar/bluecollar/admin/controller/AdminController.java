@@ -115,6 +115,12 @@ public class AdminController {
         return new BlueCollarApiResponse<>(message, 200);
     }
     
+    @PostMapping("/verify-reset-otp")
+    public BlueCollarApiResponse<String> verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
+        String message = adminService.verifyResetOtp(request);
+        return new BlueCollarApiResponse<>(message, 200);
+    }
+    
     @PostMapping("/reset-password")
     public BlueCollarApiResponse<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         String message = adminService.resetPassword(request);

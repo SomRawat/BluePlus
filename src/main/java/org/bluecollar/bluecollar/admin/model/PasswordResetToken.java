@@ -13,6 +13,7 @@ public class PasswordResetToken {
     private String otp;
     private LocalDateTime expiryTime;
     private boolean used;
+    private boolean verified;
 
     public PasswordResetToken() {}
 
@@ -21,6 +22,7 @@ public class PasswordResetToken {
         this.otp = otp;
         this.expiryTime = LocalDateTime.now().plusMinutes(30);
         this.used = false;
+        this.verified = false;
     }
 
     public String getId() { return id; }
@@ -33,4 +35,6 @@ public class PasswordResetToken {
     public void setExpiryTime(LocalDateTime expiryTime) { this.expiryTime = expiryTime; }
     public boolean isUsed() { return used; }
     public void setUsed(boolean used) { this.used = used; }
+    public boolean isVerified() { return verified; }
+    public void setVerified(boolean verified) { this.verified = verified; }
 }

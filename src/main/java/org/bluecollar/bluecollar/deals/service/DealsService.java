@@ -62,11 +62,10 @@ public class DealsService {
         return response;
     }
 
-    // Admin panel helpers to fetch all stored raw page data
-    public List<HomePageData> getAllHomePagesData() {
-        return homePageRepository.findAll().stream()
-                .map(HomePage::getData)
-                .collect(Collectors.toList());
+    // Admin panel helper to fetch stored home page data
+    public HomePageData getHomePageData() {
+        List<HomePage> homePages = homePageRepository.findAll();
+        return homePages.isEmpty() ? new HomePageData() : homePages.get(0).getData();
     }
     
     public BrandDetailsResponse getBrandDetails(String brandId) {

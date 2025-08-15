@@ -32,9 +32,9 @@ public class AdminDealsController {
     }
 
     @GetMapping("/home")
-    public BlueCollarApiResponse<java.util.List<HomePageData>> getHomePages(@RequestHeader("Admin-Session-Token") String sessionToken) {
+    public BlueCollarApiResponse<HomePageData> getHomePages(@RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanViewDeals(sessionToken);
-        java.util.List<HomePageData> response = dealsService.getAllHomePagesData();
+        HomePageData response = dealsService.getHomePageData();
         return new BlueCollarApiResponse<>(response, 200);
     }
     

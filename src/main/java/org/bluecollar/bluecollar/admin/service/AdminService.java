@@ -315,6 +315,31 @@ public class AdminService {
     }
     
     @Transactional
+    public String verifyResetOtp(VerifyResetOtpRequest request) {
+        // Find admin by email
+        Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
+        if (adminOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Admin not found with email: " + request.getEmail());
+        }
+        
+        // Validate OTP
+        Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository
+                .findByEmailAndOtpAndUsedFalseAndExpiryTimeAfter(request.getEmail(), request.getOtp(), LocalDateTime.now());
+        
+        if (tokenOpt.isEmpty()) {
+            throw new BadRequestException("Invalid or expired OTP");
+        }
+        
+        PasswordResetToken token = tokenOpt.get();
+        
+        // Mark token as verified (but not used yet)
+        token.setVerified(true);
+        passwordResetTokenRepository.save(token);
+        
+        return "OTP verified successfully";
+    }
+    
+    @Transactional
     public String resetPassword(ResetPasswordRequest request) {
         // Find admin by email
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
@@ -324,12 +349,12 @@ public class AdminService {
         
         Admin admin = adminOpt.get();
         
-        // Validate OTP
+        // Check for verified token
         Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository
-                .findByEmailAndOtpAndUsedFalseAndExpiryTimeAfter(request.getEmail(), request.getOtp(), LocalDateTime.now());
+                .findByEmailAndVerifiedTrueAndUsedFalseAndExpiryTimeAfter(request.getEmail(), LocalDateTime.now());
         
         if (tokenOpt.isEmpty()) {
-            throw new BadRequestException("Invalid or expired OTP");
+            throw new BadRequestException("OTP not verified or expired. Please verify OTP first.");
         }
         
         PasswordResetToken token = tokenOpt.get();
