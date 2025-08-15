@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface PasswordResetTokenRepository extends MongoRepository<PasswordResetToken, String> {
     Optional<PasswordResetToken> findByEmailAndOtpAndUsedFalseAndExpiryTimeAfter(String email, String otp, LocalDateTime currentTime);
+    Optional<PasswordResetToken> findByEmailAndUsedFalseAndCreatedAtAfter(String email, LocalDateTime createdAfter);
     void deleteByEmail(String email);
 }
