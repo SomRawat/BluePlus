@@ -13,13 +13,17 @@ public class HomePageData {
         private String id;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
 
         public BannerItem() {}
 
-        public BannerItem(String id, String imageUrl, String redirectionLink) {
+        public BannerItem(String id, String imageUrl, String redirectionLink, String categoryId, String pdpId) {
             this.id = id;
             this.imageUrl = imageUrl;
             this.redirectionLink = redirectionLink;
+            this.categoryId = categoryId;
+            this.pdpId = pdpId;
         }
 
         public String getId() { return id; }
@@ -28,6 +32,10 @@ public class HomePageData {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
         public String getRedirectionLink() { return redirectionLink; }
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
+        public String getCategoryId() { return categoryId; }
+        public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+        public String getPdpId() { return pdpId; }
+        public void setPdpId(String pdpId) { this.pdpId = pdpId; }
     }
 
     public static class PopularBrand implements HasId {
@@ -36,15 +44,19 @@ public class HomePageData {
         private String discount;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
 
         public PopularBrand() {}
 
-        public PopularBrand(String id, String name, String discount, String imageUrl, String redirectionLink) {
+        public PopularBrand(String id, String name, String discount, String imageUrl, String redirectionLink, String categoryId, String pdpId) {
             this.id = id;
             this.name = name;
             this.discount = discount;
             this.imageUrl = imageUrl;
             this.redirectionLink = redirectionLink;
+            this.categoryId = categoryId;
+            this.pdpId = pdpId;
         }
 
         public String getId() { return id; }
@@ -57,19 +69,27 @@ public class HomePageData {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
         public String getRedirectionLink() { return redirectionLink; }
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
+        public String getCategoryId() { return categoryId; }
+        public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+        public String getPdpId() { return pdpId; }
+        public void setPdpId(String pdpId) { this.pdpId = pdpId; }
     }
 
     public static class HandpickedDeal implements HasId {
         private String id;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
 
         public HandpickedDeal() {}
 
-        public HandpickedDeal(String id, String imageUrl, String redirectionLink) {
+        public HandpickedDeal(String id, String imageUrl, String redirectionLink, String categoryId, String pdpId) {
             this.id = id;
             this.imageUrl = imageUrl;
             this.redirectionLink = redirectionLink;
+            this.categoryId = categoryId;
+            this.pdpId = pdpId;
         }
 
         public String getId() { return id; }
@@ -78,6 +98,10 @@ public class HomePageData {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
         public String getRedirectionLink() { return redirectionLink; }
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
+        public String getCategoryId() { return categoryId; }
+        public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+        public String getPdpId() { return pdpId; }
+        public void setPdpId(String pdpId) { this.pdpId = pdpId; }
     }
 
     public static class CategoryItem implements HasId {
@@ -85,14 +109,18 @@ public class HomePageData {
         private String label;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
 
         public CategoryItem() {}
 
-        public CategoryItem(String id, String label, String imageUrl, String redirectionLink) {
+        public CategoryItem(String id, String label, String imageUrl, String redirectionLink, String categoryId, String pdpId) {
             this.id = id;
             this.label = label;
             this.imageUrl = imageUrl;
             this.redirectionLink = redirectionLink;
+            this.categoryId = categoryId;
+            this.pdpId = pdpId;
         }
 
         public String getId() { return id; }
@@ -103,6 +131,10 @@ public class HomePageData {
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
         public String getRedirectionLink() { return redirectionLink; }
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
+        public String getCategoryId() { return categoryId; }
+        public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+        public String getPdpId() { return pdpId; }
+        public void setPdpId(String pdpId) { this.pdpId = pdpId; }
     }
 
     private boolean isActive = true;

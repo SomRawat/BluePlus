@@ -153,16 +153,16 @@ public class DealsService {
             
             // Merge items by ID instead of replacing entire arrays
             if (homePageData.getBanners() != null) {
-                mergeItems(existingData.getBanners(), homePageData.getBanners());
+                mergeBanners(existingData.getBanners(), homePageData.getBanners());
             }
             if (homePageData.getPopularBrands() != null) {
-                mergeItems(existingData.getPopularBrands(), homePageData.getPopularBrands());
+                mergePopularBrands(existingData.getPopularBrands(), homePageData.getPopularBrands());
             }
             if (homePageData.getHandpickedDeals() != null) {
-                mergeItems(existingData.getHandpickedDeals(), homePageData.getHandpickedDeals());
+                mergeHandpickedDeals(existingData.getHandpickedDeals(), homePageData.getHandpickedDeals());
             }
             if (homePageData.getCategories() != null) {
-                mergeItems(existingData.getCategories(), homePageData.getCategories());
+                mergeCategories(existingData.getCategories(), homePageData.getCategories());
             }
             existingData.setActive(homePageData.isActive());
             
@@ -176,13 +176,39 @@ public class DealsService {
         return getHomePage();
     }
     
-    private <T extends HasId> void mergeItems(List<T> existingItems, List<T> newItems) {
-        for (T newItem : newItems) {
+    private void mergeBanners(List<HomePageData.BannerItem> existing, List<HomePageData.BannerItem> newItems) {
+        for (HomePageData.BannerItem newItem : newItems) {
             if (newItem.getId() != null && !newItem.getId().isEmpty()) {
-                // Update existing item with same ID
-                existingItems.removeIf(existing -> newItem.getId().equals(existing.getId()));
+                existing.removeIf(item -> newItem.getId().equals(item.getId()));
             }
-            existingItems.add(newItem);
+            existing.add(newItem);
+        }
+    }
+    
+    private void mergePopularBrands(List<HomePageData.PopularBrand> existing, List<HomePageData.PopularBrand> newItems) {
+        for (HomePageData.PopularBrand newItem : newItems) {
+            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
+                existing.removeIf(item -> newItem.getId().equals(item.getId()));
+            }
+            existing.add(newItem);
+        }
+    }
+    
+    private void mergeHandpickedDeals(List<HomePageData.HandpickedDeal> existing, List<HomePageData.HandpickedDeal> newItems) {
+        for (HomePageData.HandpickedDeal newItem : newItems) {
+            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
+                existing.removeIf(item -> newItem.getId().equals(item.getId()));
+            }
+            existing.add(newItem);
+        }
+    }
+    
+    private void mergeCategories(List<HomePageData.CategoryItem> existing, List<HomePageData.CategoryItem> newItems) {
+        for (HomePageData.CategoryItem newItem : newItems) {
+            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
+                existing.removeIf(item -> newItem.getId().equals(item.getId()));
+            }
+            existing.add(newItem);
         }
     }
     
