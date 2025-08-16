@@ -38,11 +38,11 @@ public class AdminDealsController {
         return new BlueCollarApiResponse<>(response, 200);
     }
     
-    @DeleteMapping("/home")
-    public BlueCollarApiResponse<String> deleteHomePage(@RequestHeader("Admin-Session-Token") String sessionToken) {
+    @DeleteMapping("/home/item/{type}/{id}")
+    public BlueCollarApiResponse<String> deleteHomePageItem(@PathVariable HomePageItemType type, @PathVariable String id, @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
-        dealsService.deleteHomePage();
-        return new BlueCollarApiResponse<>("Home page deleted successfully", 200);
+        dealsService.deleteHomePageItem(type, id);
+        return new BlueCollarApiResponse<>(type.name().toLowerCase().replace("_", " ") + " deleted successfully", 200);
     }
 
     @PostMapping("/category/{categoryId}")

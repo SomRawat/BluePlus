@@ -9,7 +9,7 @@ public class HomePageData {
     private List<HandpickedDeal> handpickedDeals;
     private List<CategoryItem> categories;
 
-    public static class BannerItem {
+    public static class BannerItem implements HasId {
         private String id;
         private String imageUrl;
         private String redirectionLink;
@@ -30,7 +30,8 @@ public class HomePageData {
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
     }
 
-    public static class PopularBrand {
+    public static class PopularBrand implements HasId {
+        private String id;
         private String name;
         private String discount;
         private String imageUrl;
@@ -38,13 +39,16 @@ public class HomePageData {
 
         public PopularBrand() {}
 
-        public PopularBrand(String name, String discount, String imageUrl, String redirectionLink) {
+        public PopularBrand(String id, String name, String discount, String imageUrl, String redirectionLink) {
+            this.id = id;
             this.name = name;
             this.discount = discount;
             this.imageUrl = imageUrl;
             this.redirectionLink = redirectionLink;
         }
 
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
         public String getDiscount() { return discount; }
@@ -55,7 +59,7 @@ public class HomePageData {
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
     }
 
-    public static class HandpickedDeal {
+    public static class HandpickedDeal implements HasId {
         private String id;
         private String imageUrl;
         private String redirectionLink;
@@ -76,7 +80,7 @@ public class HomePageData {
         public void setRedirectionLink(String redirectionLink) { this.redirectionLink = redirectionLink; }
     }
 
-    public static class CategoryItem {
+    public static class CategoryItem implements HasId {
         private String id;
         private String label;
         private String imageUrl;

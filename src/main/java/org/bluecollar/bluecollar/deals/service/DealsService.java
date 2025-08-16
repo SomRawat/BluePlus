@@ -141,6 +141,9 @@ public class DealsService {
     // Admin methods for managing deals
     @Transactional
     public HomePageResponse createHomePage(HomePageData homePageData) {
+        // Generate IDs for items that don't have them
+        generateIdsForHomePageItems(homePageData);
+        
         List<HomePage> existingPages = homePageRepository.findAll();
         
         if (!existingPages.isEmpty()) {
@@ -148,11 +151,19 @@ public class DealsService {
             HomePage existingPage = existingPages.get(0);
             HomePageData existingData = existingPage.getData();
             
-            // Update only provided fields
-            if (homePageData.getBanners() != null) existingData.setBanners(homePageData.getBanners());
-            if (homePageData.getPopularBrands() != null) existingData.setPopularBrands(homePageData.getPopularBrands());
-            if (homePageData.getHandpickedDeals() != null) existingData.setHandpickedDeals(homePageData.getHandpickedDeals());
-            if (homePageData.getCategories() != null) existingData.setCategories(homePageData.getCategories());
+            // Merge items by ID instead of replacing entire arrays
+            if (homePageData.getBanners() != null) {
+                mergeItems(existingData.getBanners(), homePageData.getBanners());
+            }
+            if (homePageData.getPopularBrands() != null) {
+                mergeItems(existingData.getPopularBrands(), homePageData.getPopularBrands());
+            }
+            if (homePageData.getHandpickedDeals() != null) {
+                mergeItems(existingData.getHandpickedDeals(), homePageData.getHandpickedDeals());
+            }
+            if (homePageData.getCategories() != null) {
+                mergeItems(existingData.getCategories(), homePageData.getCategories());
+            }
             existingData.setActive(homePageData.isActive());
             
             homePageRepository.save(existingPage);
@@ -163,6 +174,47 @@ public class DealsService {
         }
         
         return getHomePage();
+    }
+    
+    private <T extends HasId> void mergeItems(List<T> existingItems, List<T> newItems) {
+        for (T newItem : newItems) {
+            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
+                // Update existing item with same ID
+                existingItems.removeIf(existing -> newItem.getId().equals(existing.getId()));
+            }
+            existingItems.add(newItem);
+        }
+    }
+    
+    private void generateIdsForHomePageItems(HomePageData data) {
+        if (data.getBanners() != null) {
+            data.getBanners().forEach(banner -> {
+                if (banner.getId() == null || banner.getId().isEmpty()) {
+                    banner.setId(java.util.UUID.randomUUID().toString());
+                }
+            });
+        }
+        if (data.getPopularBrands() != null) {
+            data.getPopularBrands().forEach(brand -> {
+                if (brand.getId() == null || brand.getId().isEmpty()) {
+                    brand.setId(java.util.UUID.randomUUID().toString());
+                }
+            });
+        }
+        if (data.getHandpickedDeals() != null) {
+            data.getHandpickedDeals().forEach(deal -> {
+                if (deal.getId() == null || deal.getId().isEmpty()) {
+                    deal.setId(java.util.UUID.randomUUID().toString());
+                }
+            });
+        }
+        if (data.getCategories() != null) {
+            data.getCategories().forEach(category -> {
+                if (category.getId() == null || category.getId().isEmpty()) {
+                    category.setId(java.util.UUID.randomUUID().toString());
+                }
+            });
+        }
     }
     
     @Transactional
@@ -233,8 +285,21 @@ public class DealsService {
     }
     
     @Transactional
-    public void deleteHomePage() {
-        homePageRepository.deleteAll();
+    public void deleteHomePageItem(HomePageItemType type, String id) {
+        List<HomePage> homePages = homePageRepository.findAll();
+        if (!homePages.isEmpty()) {
+            HomePage homePage = homePages.get(0);
+            HomePageData data = homePage.getData();
+            
+            switch (type) {
+                case BANNER -> data.getBanners().removeIf(banner -> id.equals(banner.getId()));
+                case POPULAR_BRAND -> data.getPopularBrands().removeIf(brand -> id.equals(brand.getId()));
+                case HANDPICKED_DEAL -> data.getHandpickedDeals().removeIf(deal -> id.equals(deal.getId()));
+                case CATEGORY -> data.getCategories().removeIf(category -> id.equals(category.getId()));
+            }
+            
+            homePageRepository.save(homePage);
+        }
     }
     
     public List<String> listAllDeals() {
