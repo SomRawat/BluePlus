@@ -166,7 +166,7 @@ public class AdminService {
         
         Admin admin = adminOpt.get();
         
-        // Update fields
+        // Update fields (password updates not allowed - use forgot password flow)
         if (adminUpdate.getName() != null) {
             admin.setName(adminUpdate.getName());
         }
@@ -178,9 +178,7 @@ public class AdminService {
             }
             admin.setEmail(adminUpdate.getEmail());
         }
-        if (adminUpdate.getPassword() != null) {
-            admin.setPassword(passwordEncoder.encode(adminUpdate.getPassword()));
-        }
+        // Password updates removed - use forgot password flow instead
         if (adminUpdate.getRole() != null) {
             admin.setRole(adminUpdate.getRole());
         }
