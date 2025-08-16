@@ -318,10 +318,10 @@ public class DealsService {
             HomePageData data = homePage.getData();
             
             switch (type) {
-                case BANNER -> data.getBanners().removeIf(banner -> id.equals(banner.getId()));
-                case POPULAR_BRAND -> data.getPopularBrands().removeIf(brand -> id.equals(brand.getId()));
-                case HANDPICKED_DEAL -> data.getHandpickedDeals().removeIf(deal -> id.equals(deal.getId()));
-                case CATEGORY -> data.getCategories().removeIf(category -> id.equals(category.getId()));
+                case banners -> data.getBanners().removeIf(banner -> id.equals(banner.getId()));
+                case popularBrands -> data.getPopularBrands().removeIf(brand -> id.equals(brand.getId()));
+                case handpickedDeals -> data.getHandpickedDeals().removeIf(deal -> id.equals(deal.getId()));
+                case categories -> data.getCategories().removeIf(category -> id.equals(category.getId()));
             }
             
             homePageRepository.save(homePage);
