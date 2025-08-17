@@ -37,7 +37,7 @@ public class AdminDealsController {
         HomePageData response = dealsService.getHomePageData();
         return new BlueCollarApiResponse<>(response, 200);
     }
-    
+
     @DeleteMapping("/home/item/{type}/{id}")
     public BlueCollarApiResponse<String> deleteHomePageItem(@PathVariable HomePageItemType type, @PathVariable String id, @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
@@ -61,6 +61,15 @@ public class AdminDealsController {
         return new BlueCollarApiResponse<>(response, 200);
     }
 
+    @DeleteMapping("/category/{categoryId}/offer/{offerId}")
+    public BlueCollarApiResponse<String> deleteCategoryOffer(@PathVariable String categoryId, @PathVariable String offerId,
+                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
+        sessionService.validateCanManageDeals(sessionToken);
+        dealsService.deleteCategoryOffer(categoryId, offerId);
+        return new BlueCollarApiResponse<>("Offer deleted successfully", 200);
+    }
+
+
     @PostMapping("/brand/{brandId}")
     public BlueCollarApiResponse<BrandDetailsResponse> createBrandDetails(@PathVariable String brandId,
                                                                           @Valid @RequestBody PDPData pdpData,
@@ -77,13 +86,6 @@ public class AdminDealsController {
         return new BlueCollarApiResponse<>(response, 200);
     }
 
-    @DeleteMapping("/category/{categoryId}")
-    public BlueCollarApiResponse<String> deleteCategoryDeals(@PathVariable String categoryId,
-                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
-        sessionService.validateCanManageDeals(sessionToken);
-        dealsService.deleteCategoryDeals(categoryId);
-        return new BlueCollarApiResponse<>("Category deals deleted successfully", 200);
-    }
 
     @DeleteMapping("/brand/{brandId}")
     public BlueCollarApiResponse<String> deleteBrandDetails(@PathVariable String brandId,

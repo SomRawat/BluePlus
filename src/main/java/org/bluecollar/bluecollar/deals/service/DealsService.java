@@ -105,22 +105,23 @@ public class DealsService {
     }
     
     public CategoryDealsResponse getCategoryDeals(String categoryId, String tab) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-        
         CategoryDealsResponse response = new CategoryDealsResponse();
-        response.setTitle(category.getLabel());
+        
+        // Try to get category, use categoryId as title if not found
+        Category category = categoryRepository.findById(categoryId).orElse(null);
+        response.setTitle(category != null ? category.getLabel() : categoryId);
         response.setTabs(Arrays.asList("All Deals", "Nearby", "Popular", "Trending", "Latest", "Top Rated"));
         response.setActiveTab(tab != null ? tab : "All Deals");
         
-        // Get brands as offers
-        List<Brand> brands = brandRepository.findByActiveTrue();
-        response.setOffers(brands.stream().map(this::toOfferDto).collect(Collectors.toList()));
-        
-        // Set isActive from PLP data if exists
+        // Get offers from PLP data if exists, otherwise use brands
         PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
-        if (plp != null) {
+        if (plp != null && plp.getData().getOffers() != null) {
+            response.setOffers(plp.getData().getOffers().stream().map(this::toOfferResponseDto).collect(Collectors.toList()));
             response.setActive(plp.getData().isActive());
+        } else {
+            // Fallback to brands as offers
+            List<Brand> brands = brandRepository.findByActiveTrue();
+            response.setOffers(brands.stream().map(this::toOfferDto).collect(Collectors.toList()));
         }
         
         return response;
@@ -212,6 +213,41 @@ public class DealsService {
         }
     }
     
+    private void mergeOffers(List<PLPData.OfferItem> existing, List<PLPData.OfferItem> newItems) {
+        for (PLPData.OfferItem newItem : newItems) {
+            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
+                existing.removeIf(item -> newItem.getId().equals(item.getId()));
+            }
+            existing.add(newItem);
+        }
+    }
+    
+    private void generateIdsForPLPData(PLPData data) {
+        if (data.getId() == null || data.getId().isEmpty()) {
+            data.setId(java.util.UUID.randomUUID().toString());
+        }
+        if (data.getOffers() != null) {
+            data.getOffers().forEach(offer -> {
+                if (offer.getId() == null || offer.getId().isEmpty()) {
+                    offer.setId(java.util.UUID.randomUUID().toString());
+                }
+            });
+        }
+    }
+    
+    private void generateIdsForPDPData(PDPData data) {
+        if (data.getId() == null || data.getId().isEmpty()) {
+            data.setId(java.util.UUID.randomUUID().toString());
+        }
+        if (data.getFaq() != null) {
+            data.getFaq().forEach(faq -> {
+                if (faq.getId() == null || faq.getId().isEmpty()) {
+                    faq.setId(java.util.UUID.randomUUID().toString());
+                }
+            });
+        }
+    }
+    
     private void generateIdsForHomePageItems(HomePageData data) {
         if (data.getBanners() != null) {
             data.getBanners().forEach(banner -> {
@@ -250,6 +286,9 @@ public class DealsService {
     
     @Transactional
     public CategoryDealsResponse createCategoryDeals(String categoryId, PLPData plpData) {
+        // Generate IDs for PLP data
+        generateIdsForPLPData(plpData);
+        
         PLP existingPlp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
         
         if (existingPlp != null) {
@@ -258,7 +297,9 @@ public class DealsService {
             if (plpData.getTitle() != null) existingData.setTitle(plpData.getTitle());
             if (plpData.getTabs() != null) existingData.setTabs(plpData.getTabs());
             if (plpData.getActiveTab() != null) existingData.setActiveTab(plpData.getActiveTab());
-            if (plpData.getOffers() != null) existingData.setOffers(plpData.getOffers());
+            if (plpData.getOffers() != null) {
+                mergeOffers(existingData.getOffers(), plpData.getOffers());
+            }
             existingData.setActive(plpData.isActive());
             plpRepository.save(existingPlp);
         } else {
@@ -272,6 +313,9 @@ public class DealsService {
     
     @Transactional
     public BrandDetailsResponse createBrandDetails(String brandId, PDPData pdpData) {
+        // Generate IDs for PDP data
+        generateIdsForPDPData(pdpData);
+        
         PDP existingPdp = pdpRepository.findByBrandIdAndActiveTrue(brandId);
         
         if (existingPdp != null) {
@@ -303,6 +347,16 @@ public class DealsService {
     @Transactional
     public void deleteCategoryDeals(String categoryId) {
         plpRepository.deleteByCategoryId(categoryId);
+    }
+    
+    @Transactional
+    public void deleteCategoryOffer(String categoryId, String offerId) {
+        PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
+        if (plp != null) {
+            PLPData data = plp.getData();
+            data.getOffers().removeIf(offer -> offerId.equals(offer.getId()));
+            plpRepository.save(plp);
+        }
     }
     
     @Transactional
@@ -390,6 +444,16 @@ public class DealsService {
         dto.setDiscount(brand.getDiscount());
         dto.setDiscountLabel("On " + brand.getName().toLowerCase());
         dto.setImageUrl(brand.getImageUrl());
+        return dto;
+    }
+    
+    private CategoryDealsResponse.OfferDto toOfferResponseDto(PLPData.OfferItem offer) {
+        CategoryDealsResponse.OfferDto dto = new CategoryDealsResponse.OfferDto();
+        dto.setId(offer.getId());
+        dto.setBrand(offer.getBrand());
+        dto.setDiscount(offer.getDiscount());
+        dto.setDiscountLabel(offer.getDiscountLabel());
+        dto.setImageUrl(offer.getImageUrl());
         return dto;
     }
 }

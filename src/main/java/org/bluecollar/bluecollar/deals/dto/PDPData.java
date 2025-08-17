@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class PDPData {
+    private String id;
     private String categoryId;
     private String brandName;
     private String bannerLink;
@@ -20,16 +21,20 @@ public class PDPData {
     private boolean isActive = true;
 
     public static class FAQItem {
+        private String id;
         private String question;
         private String answer;
 
         public FAQItem() {}
 
-        public FAQItem(String question, String answer) {
+        public FAQItem(String id, String question, String answer) {
+            this.id = id;
             this.question = question;
             this.answer = answer;
         }
 
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
         public String getQuestion() { return question; }
         public void setQuestion(String question) { this.question = question; }
         public String getAnswer() { return answer; }
@@ -46,6 +51,8 @@ public class PDPData {
         this.faq = new ArrayList<>();
     }
 
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     public String getCategoryId() { return categoryId; }
     public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
 

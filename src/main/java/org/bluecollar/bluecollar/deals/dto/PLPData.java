@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class PLPData {
+    private String id;
     private String title;
     private List<String> tabs;
     private String activeTab;
@@ -45,6 +46,8 @@ public class PLPData {
         this.offers = new ArrayList<>();
     }
 
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public List<String> getTabs() { return tabs; }
