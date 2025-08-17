@@ -309,20 +309,14 @@ public class DealsService {
                 plpRepository.save(existingPlp);
                 return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
             }
-        } else {
-            // CREATE: Auto-generate categoryId for new entry
-            finalCategoryId = plpData.getTitle() != null ?
-                plpData.getTitle().toLowerCase().replaceAll("\\s+", "-") :
-                java.util.UUID.randomUUID().toString();
-            plpData.setCategoryId(finalCategoryId);
         }
 
-        // Create new PLP
+        // CREATE: Let MongoDB auto-generate categoryId (pass null)
         generateIdsForPLPData(plpData);
-        PLP plp = new PLP(finalCategoryId, plpData, true);
-        plpRepository.save(plp);
+        PLP plp = new PLP(null, plpData, true); // null = MongoDB auto-generates ID
+        PLP savedPlp = plpRepository.save(plp);
         
-        return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
+        return getCategoryDeals(savedPlp.getCategoryId(), plpData.getActiveTab());
     }
     
     @Transactional
