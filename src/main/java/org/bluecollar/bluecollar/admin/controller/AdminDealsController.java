@@ -85,11 +85,11 @@ public class AdminDealsController {
     }
 
 
-    @DeleteMapping("/brand/{brandId}")
-    public BlueCollarApiResponse<String> deleteBrandDetails(@PathVariable String brandId,
+    @DeleteMapping("/brand/{id}")
+    public BlueCollarApiResponse<String> deleteBrandDetails(@PathVariable String id,
                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
-        dealsService.deleteBrandDetails(brandId);
+        dealsService.deleteBrandDetailsById(id);
         return new BlueCollarApiResponse<>("Brand details deleted successfully", 200);
     }
     

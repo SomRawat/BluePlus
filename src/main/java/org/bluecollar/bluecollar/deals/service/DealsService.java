@@ -96,11 +96,8 @@ public class DealsService {
         // Set redeemed flag default
         response.setRedeemed(false);
         
-        // Set isActive from PDP data if exists
-        PDP pdp = pdpRepository.findByBrandIdAndActiveTrue(brandId);
-        if (pdp != null) {
-            response.setActive(pdp.getData().isActive());
-        }
+        // Set default active status
+        response.setActive(true);
         
         return response;
     }
@@ -145,7 +142,7 @@ public class DealsService {
 
     public List<PDPData> getAllBrandPagesData() {
         return pdpRepository.findAll().stream()
-                .map(PDP::getData)
+                .map(this::convertPDPToPDPData)
                 .collect(Collectors.toList());
     }
     
@@ -338,19 +335,18 @@ public class DealsService {
             // Update existing PDP by ID
             PDP existingPdp = pdpRepository.findById(pdpData.getId()).orElse(null);
             if (existingPdp != null) {
-                existingPdp.setData(pdpData);
+                updatePDPFromData(existingPdp, pdpData);
                 pdpRepository.save(existingPdp);
-                return convertPDPDataToBrandDetailsResponse(pdpData);
+                return convertPDPToBrandDetailsResponse(existingPdp);
             }
         }
         
         // Create new PDP
         generateIdsForPDPData(pdpData);
-        String brandId = pdpData.getBrandName() != null ? pdpData.getBrandName().toLowerCase().replaceAll("\\s+", "-") : java.util.UUID.randomUUID().toString();
-        PDP pdp = new PDP(brandId, pdpData, true);
-        pdpRepository.save(pdp);
+        PDP pdp = new PDP(null, pdpData, true); // null brandId, let MongoDB generate ID
+        PDP savedPdp = pdpRepository.save(pdp);
         
-        return convertPDPDataToBrandDetailsResponse(pdpData);
+        return convertPDPToBrandDetailsResponse(savedPdp);
     }
     
     @Transactional
@@ -369,7 +365,8 @@ public class DealsService {
     
     @Transactional
     public void deleteBrandDetails(String brandId) {
-        pdpRepository.deleteByBrandId(brandId);
+        // This method is now deprecated, use deleteBrandDetailsById instead
+        throw new UnsupportedOperationException("Use deleteBrandDetailsById instead");
     }
     
     @Transactional
@@ -470,27 +467,81 @@ public class DealsService {
         return dto;
     }
     
-    private BrandDetailsResponse convertPDPDataToBrandDetailsResponse(PDPData pdpData) {
+    private BrandDetailsResponse convertPDPToBrandDetailsResponse(PDP pdp) {
         BrandDetailsResponse response = new BrandDetailsResponse();
-        response.setBrandName(pdpData.getBrandName());
-        response.setBannerLink(pdpData.getBannerLink());
-        response.setBrandDescription(pdpData.getBrandDescription());
-        response.setDiscountText(pdpData.getDiscountText());
-        response.setValidTill(pdpData.getValidTill());
-        response.setHowItWorksBullets(pdpData.getHowItWorksBullets());
-        response.setBenefits(pdpData.getBenefits());
-        response.setHowToRedeemBullets(pdpData.getHowToRedeemBullets());
-        response.setTermsAndConditions(pdpData.getTermsAndConditions());
-        if (pdpData.getFaq() != null) {
-            response.setFaq(pdpData.getFaq().stream().map(this::toPDPFAQDto).collect(Collectors.toList()));
+        response.setBrandName(pdp.getBrandName());
+        response.setBannerLink(pdp.getBannerLink());
+        response.setBrandDescription(pdp.getBrandDescription());
+        response.setDiscountText(pdp.getDiscountText());
+        response.setValidTill(pdp.getValidTill());
+        response.setHowItWorksBullets(pdp.getHowItWorksBullets());
+        response.setBenefits(pdp.getBenefits());
+        response.setHowToRedeemBullets(pdp.getHowToRedeemBullets());
+        response.setTermsAndConditions(pdp.getTermsAndConditions());
+        if (pdp.getFaq() != null) {
+            response.setFaq(pdp.getFaq().stream().map(this::toPDPEntityFAQDto).collect(Collectors.toList()));
         }
-        response.setRedeemLink(pdpData.getRedeemLink());
-        response.setRedeemed(pdpData.isRedeemed());
-        response.setActive(pdpData.isActive());
+        response.setRedeemLink(pdp.getRedeemLink());
+        response.setRedeemed(pdp.isRedeemed());
+        response.setActive(pdp.isActive());
         return response;
     }
     
+    private PDPData convertPDPToPDPData(PDP pdp) {
+        PDPData data = new PDPData();
+        data.setId(pdp.getId());
+        data.setCategoryId(pdp.getCategoryId());
+        data.setBrandName(pdp.getBrandName());
+        data.setBannerLink(pdp.getBannerLink());
+        data.setBrandDescription(pdp.getBrandDescription());
+        data.setDiscountText(pdp.getDiscountText());
+        data.setValidTill(pdp.getValidTill());
+        data.setHowItWorksBullets(pdp.getHowItWorksBullets());
+        data.setBenefits(pdp.getBenefits());
+        data.setHowToRedeemBullets(pdp.getHowToRedeemBullets());
+        data.setTermsAndConditions(pdp.getTermsAndConditions());
+        if (pdp.getFaq() != null) {
+            data.setFaq(pdp.getFaq().stream().map(faq -> {
+                PDPData.FAQItem dto = new PDPData.FAQItem();
+                dto.setId(faq.getId());
+                dto.setQuestion(faq.getQuestion());
+                dto.setAnswer(faq.getAnswer());
+                return dto;
+            }).collect(Collectors.toList()));
+        }
+        data.setRedeemLink(pdp.getRedeemLink());
+        data.setRedeemed(pdp.isRedeemed());
+        data.setActive(pdp.isActive());
+        return data;
+    }
+    
+    private void updatePDPFromData(PDP pdp, PDPData data) {
+        pdp.setCategoryId(data.getCategoryId());
+        pdp.setBrandName(data.getBrandName());
+        pdp.setBannerLink(data.getBannerLink());
+        pdp.setBrandDescription(data.getBrandDescription());
+        pdp.setDiscountText(data.getDiscountText());
+        pdp.setValidTill(data.getValidTill());
+        pdp.setHowItWorksBullets(data.getHowItWorksBullets());
+        pdp.setBenefits(data.getBenefits());
+        pdp.setHowToRedeemBullets(data.getHowToRedeemBullets());
+        pdp.setTermsAndConditions(data.getTermsAndConditions());
+        pdp.setFaq(data.getFaq() != null ? 
+            data.getFaq().stream().map(PDP.FAQItem::new).collect(Collectors.toList()) : 
+            new ArrayList<>());
+        pdp.setRedeemLink(data.getRedeemLink());
+        pdp.setRedeemed(data.isRedeemed());
+        pdp.setActive(data.isActive());
+    }
+    
     private BrandDetailsResponse.FAQDto toPDPFAQDto(PDPData.FAQItem faq) {
+        BrandDetailsResponse.FAQDto dto = new BrandDetailsResponse.FAQDto();
+        dto.setQuestion(faq.getQuestion());
+        dto.setAnswer(faq.getAnswer());
+        return dto;
+    }
+    
+    private BrandDetailsResponse.FAQDto toPDPEntityFAQDto(PDP.FAQItem faq) {
         BrandDetailsResponse.FAQDto dto = new BrandDetailsResponse.FAQDto();
         dto.setQuestion(faq.getQuestion());
         dto.setAnswer(faq.getAnswer());
