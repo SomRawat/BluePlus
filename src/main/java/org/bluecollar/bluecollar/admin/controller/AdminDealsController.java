@@ -49,7 +49,7 @@ public class AdminDealsController {
     public BlueCollarApiResponse<CategoryDealsResponse> createCategoryDeals(@Valid @RequestBody PLPData plpData,
                                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
-        CategoryDealsResponse response = dealsService.createCategoryDeals(plpData.getCategoryId(), plpData);
+        CategoryDealsResponse response = dealsService.createCategoryDeals(plpData);
         return new BlueCollarApiResponse<>(response, 200);
     }
 

@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -114,10 +115,10 @@ public class DealsService {
         response.setActiveTab(tab != null ? tab : "All Deals");
         
         // Get offers from PLP data if exists, otherwise use brands
-        PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
-        if (plp != null && plp.getData().getOffers() != null) {
-            response.setOffers(plp.getData().getOffers().stream().map(this::toOfferResponseDto).collect(Collectors.toList()));
-            response.setActive(plp.getData().isActive());
+        PLP plp = plpRepository.findById(categoryId).orElse(null);
+        if (plp != null && plp.getOffers() != null) {
+            response.setOffers(plp.getOffers().stream().map(this::toOfferResponseDto).collect(Collectors.toList()));
+            response.setActive(plp.isActive());
         } else {
             // Fallback to brands as offers
             List<Brand> brands = brandRepository.findByActiveTrue();
@@ -129,7 +130,16 @@ public class DealsService {
 
     public List<PLPResponse> getAllCategoryPagesData() {
         return plpRepository.findAll().stream()
-                .map(plp -> new PLPResponse(plp.getCategoryId(), plp.getData(), plp.isActive()))
+                .map(plp -> {
+                    PLPResponse response = new PLPResponse();
+                    response.setCategoryId(plp.getCategoryId());
+                    response.setTitle(plp.getTitle());
+                    response.setTabs(plp.getTabs());
+                    response.setActiveTab(plp.getActiveTab());
+                    response.setOffers(plp.getOffers());
+                    response.setActive(plp.isActive());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -282,23 +292,35 @@ public class DealsService {
     }
     
     @Transactional
-    public CategoryDealsResponse createCategoryDeals(String categoryId, PLPData plpData) {
-        // Use categoryId from path or PLPData
-        String finalCategoryId = plpData.getCategoryId() != null ? plpData.getCategoryId() : categoryId;
-        plpData.setCategoryId(finalCategoryId);
+    public CategoryDealsResponse createCategoryDeals(PLPData plpData) {
+        String finalCategoryId = plpData.getCategoryId();
         
-        // Check if PLP exists
-        PLP existingPlp = plpRepository.findByCategoryIdAndActiveTrue(finalCategoryId);
-        if (existingPlp != null) {
-            // Update existing
-            existingPlp.setData(plpData);
-            plpRepository.save(existingPlp);
+        if (finalCategoryId != null && !finalCategoryId.isEmpty()) {
+            // UPDATE: categoryId provided - try to update existing
+            PLP existingPlp = plpRepository.findById(finalCategoryId).orElse(null);
+            if (existingPlp != null) {
+                existingPlp.setTitle(plpData.getTitle());
+                existingPlp.setTabs(plpData.getTabs());
+                existingPlp.setActiveTab(plpData.getActiveTab());
+                existingPlp.setOffers(plpData.getOffers() != null ?
+                    plpData.getOffers().stream().map(PLP.OfferItem::new).collect(java.util.stream.Collectors.toList()) :
+                    new ArrayList<>());
+                existingPlp.setActive(plpData.isActive());
+                plpRepository.save(existingPlp);
+                return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
+            }
         } else {
-            // Create new
-            generateIdsForPLPData(plpData);
-            PLP plp = new PLP(finalCategoryId, plpData, true);
-            plpRepository.save(plp);
+            // CREATE: Auto-generate categoryId for new entry
+            finalCategoryId = plpData.getTitle() != null ?
+                plpData.getTitle().toLowerCase().replaceAll("\\s+", "-") :
+                java.util.UUID.randomUUID().toString();
+            plpData.setCategoryId(finalCategoryId);
         }
+
+        // Create new PLP
+        generateIdsForPLPData(plpData);
+        PLP plp = new PLP(finalCategoryId, plpData, true);
+        plpRepository.save(plp);
         
         return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
     }
@@ -333,8 +355,7 @@ public class DealsService {
     public void deleteCategoryOffer(String categoryId, String offerId) {
         PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
         if (plp != null) {
-            PLPData data = plp.getData();
-            data.getOffers().removeIf(offer -> offerId.equals(offer.getId()));
+            plp.getOffers().removeIf(offer -> offerId.equals(offer.getId()));
             plpRepository.save(plp);
         }
     }
@@ -432,7 +453,7 @@ public class DealsService {
         return dto;
     }
     
-    private CategoryDealsResponse.OfferDto toOfferResponseDto(PLPData.OfferItem offer) {
+    private CategoryDealsResponse.OfferDto toOfferResponseDto(PLP.OfferItem offer) {
         CategoryDealsResponse.OfferDto dto = new CategoryDealsResponse.OfferDto();
         dto.setId(offer.getId());
         dto.setBrand(offer.getBrand());

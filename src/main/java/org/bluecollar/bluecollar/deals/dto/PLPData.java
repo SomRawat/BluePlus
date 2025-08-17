@@ -16,6 +16,7 @@ public class PLPData {
         private String discount;
         private String discountLabel;
         private String imageUrl;
+        private boolean active = true;
 
         public OfferItem() {}
 
@@ -37,6 +38,8 @@ public class PLPData {
         public void setDiscountLabel(String discountLabel) { this.discountLabel = discountLabel; }
         public String getImageUrl() { return imageUrl; }
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+        public boolean isActive() { return active; }
+        public void setActive(boolean active) { this.active = active; }
     }
 
     private boolean isActive = true;

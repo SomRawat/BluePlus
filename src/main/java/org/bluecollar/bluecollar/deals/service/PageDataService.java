@@ -31,7 +31,7 @@ public class PageDataService {
     
     public void savePLPData(String categoryId, PLPData data) {
         // Upsert by category key
-        var existing = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
+        var existing = plpRepository.findById(categoryId).orElse(null);
         if (existing != null) {
             existing.setActive(false);
             plpRepository.save(existing);
@@ -43,7 +43,7 @@ public class PageDataService {
     public void savePDPData(String brandId, PDPData data) {
         // Ensure PDP has linked PLP category
         if (data.getCategoryId() != null && !data.getCategoryId().isEmpty()) {
-            var plp = plpRepository.findByCategoryIdAndActiveTrue(data.getCategoryId());
+            var plp = plpRepository.findById(data.getCategoryId()).orElse(null);
             if (plp == null) {
                 // If PLP not present for the category, create a minimal PLP placeholder
                 PLPData plpData = new PLPData();
