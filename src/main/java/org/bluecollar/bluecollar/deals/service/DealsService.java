@@ -302,9 +302,22 @@ public class DealsService {
                 existingPlp.setTitle(plpData.getTitle());
                 existingPlp.setTabs(plpData.getTabs());
                 existingPlp.setActiveTab(plpData.getActiveTab());
-                existingPlp.setOffers(plpData.getOffers() != null ?
-                    plpData.getOffers().stream().map(PLP.OfferItem::new).collect(java.util.stream.Collectors.toList()) :
-                    new ArrayList<>());
+                
+                // Merge offers instead of replacing
+                if (plpData.getOffers() != null) {
+                    for (PLPData.OfferItem newOffer : plpData.getOffers()) {
+                        if (newOffer.getId() == null || newOffer.getId().isEmpty()) {
+                            // New offer - generate ID and add
+                            newOffer.setId(java.util.UUID.randomUUID().toString());
+                            existingPlp.getOffers().add(new PLP.OfferItem(newOffer));
+                        } else {
+                            // Update existing offer by ID
+                            existingPlp.getOffers().removeIf(offer -> newOffer.getId().equals(offer.getId()));
+                            existingPlp.getOffers().add(new PLP.OfferItem(newOffer));
+                        }
+                    }
+                }
+                
                 existingPlp.setActive(plpData.isActive());
                 plpRepository.save(existingPlp);
                 return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
