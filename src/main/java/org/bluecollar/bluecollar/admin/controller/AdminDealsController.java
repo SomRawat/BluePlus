@@ -70,12 +70,11 @@ public class AdminDealsController {
     }
 
 
-    @PostMapping("/brand/{brandId}")
-    public BlueCollarApiResponse<BrandDetailsResponse> createBrandDetails(@PathVariable String brandId,
-                                                                          @Valid @RequestBody PDPData pdpData,
+    @PostMapping("/brand")
+    public BlueCollarApiResponse<BrandDetailsResponse> createBrandDetails(@Valid @RequestBody PDPData pdpData,
                                                                           @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
-        BrandDetailsResponse response = dealsService.createBrandDetails(brandId, pdpData);
+        BrandDetailsResponse response = dealsService.createBrandDetails(pdpData);
         return new BlueCollarApiResponse<>(response, 200);
     }
 
@@ -92,6 +91,14 @@ public class AdminDealsController {
                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
         dealsService.deleteBrandDetails(brandId);
+        return new BlueCollarApiResponse<>("Brand details deleted successfully", 200);
+    }
+    
+    @DeleteMapping("/brand/id/{id}")
+    public BlueCollarApiResponse<String> deleteBrandDetailsById(@PathVariable String id,
+                                                               @RequestHeader("Admin-Session-Token") String sessionToken) {
+        sessionService.validateCanManageDeals(sessionToken);
+        dealsService.deleteBrandDetailsById(id);
         return new BlueCollarApiResponse<>("Brand details deleted successfully", 200);
     }
 
