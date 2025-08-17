@@ -49,8 +49,35 @@ public class PageDataFactory {
         return null;
     }
     
-    public PDPData getPDPData(String brandId) {
-        var pdp = pdpRepository.findByBrandIdAndActiveTrue(brandId);
-        return pdp != null ? pdp.getData() : null;
+    public PDPData getPDPData(String id) {
+        var pdp = pdpRepository.findById(id).orElse(null);
+        if (pdp != null) {
+            PDPData data = new PDPData();
+            data.setId(pdp.getId());
+            data.setCategoryId(pdp.getCategoryId());
+            data.setBrandName(pdp.getBrandName());
+            data.setBannerLink(pdp.getBannerLink());
+            data.setBrandDescription(pdp.getBrandDescription());
+            data.setDiscountText(pdp.getDiscountText());
+            data.setValidTill(pdp.getValidTill());
+            data.setHowItWorksBullets(pdp.getHowItWorksBullets());
+            data.setBenefits(pdp.getBenefits());
+            data.setHowToRedeemBullets(pdp.getHowToRedeemBullets());
+            data.setTermsAndConditions(pdp.getTermsAndConditions());
+            data.setFaq(pdp.getFaq() != null ? 
+                pdp.getFaq().stream().map(faq -> {
+                    PDPData.FAQItem dto = new PDPData.FAQItem();
+                    dto.setId(faq.getId());
+                    dto.setQuestion(faq.getQuestion());
+                    dto.setAnswer(faq.getAnswer());
+                    return dto;
+                }).collect(java.util.stream.Collectors.toList()) : 
+                new ArrayList<>());
+            data.setRedeemLink(pdp.getRedeemLink());
+            data.setRedeemed(pdp.isRedeemed());
+            data.setActive(pdp.isActive());
+            return data;
+        }
+        return null;
     }
 }

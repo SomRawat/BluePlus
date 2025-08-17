@@ -391,21 +391,7 @@ public class DealsService {
             homePageRepository.save(homePage);
         }
     }
-    
-    public List<String> listAllDeals() {
-        List<String> deals = new java.util.ArrayList<>();
-        
-        // Add all category deals
-        List<PLP> plps = plpRepository.findAll();
-        deals.addAll(plps.stream().map(plp -> "Category: " + plp.getCategoryId()).collect(Collectors.toList()));
-        
-        // Add all brand deals
-        List<PDP> pdps = pdpRepository.findAll();
-        deals.addAll(pdps.stream().map(pdp -> "Brand: " + pdp.getBrandId()).collect(Collectors.toList()));
-        
-        return deals;
-    }
-    
+
     private HomePageResponse.BannerDto toBannerDto(Banner banner) {
         HomePageResponse.BannerDto dto = new HomePageResponse.BannerDto();
         dto.setId(banner.getId());
