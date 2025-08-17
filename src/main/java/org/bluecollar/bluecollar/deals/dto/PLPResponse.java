@@ -1,19 +1,13 @@
-package org.bluecollar.bluecollar.deals.model;
+package org.bluecollar.bluecollar.deals.dto;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.bluecollar.bluecollar.deals.dto.PLPData;
+public class PLPResponse {
+    private String categoryId; // From PLP entity - used for updates/deletes
+    private PLPData data;      // The actual data
+    private boolean active;    // From PLP entity
 
-@Document(collection = "plp_pages")
-public class PLP {
-    @Id
-    private String categoryId;
-    private PLPData data;
-    private boolean active;
+    public PLPResponse() {}
 
-    public PLP() {}
-
-    public PLP(String categoryId, PLPData data, boolean active) {
+    public PLPResponse(String categoryId, PLPData data, boolean active) {
         this.categoryId = categoryId;
         this.data = data;
         this.active = active;

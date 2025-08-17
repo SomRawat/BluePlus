@@ -45,19 +45,18 @@ public class AdminDealsController {
         return new BlueCollarApiResponse<>(type.name().toLowerCase().replace("_", " ") + " deleted successfully", 200);
     }
 
-    @PostMapping("/category/{categoryId}")
-    public BlueCollarApiResponse<CategoryDealsResponse> createCategoryDeals(@PathVariable String categoryId,
-                                                                            @Valid @RequestBody PLPData plpData,
+    @PostMapping("/category")
+    public BlueCollarApiResponse<CategoryDealsResponse> createCategoryDeals(@Valid @RequestBody PLPData plpData,
                                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
-        CategoryDealsResponse response = dealsService.createCategoryDeals(categoryId, plpData);
+        CategoryDealsResponse response = dealsService.createCategoryDeals(plpData.getCategoryId(), plpData);
         return new BlueCollarApiResponse<>(response, 200);
     }
 
-    @GetMapping("/category")
-    public BlueCollarApiResponse<java.util.List<PLPData>> getAllCategoryDeals(@RequestHeader("Admin-Session-Token") String sessionToken) {
+    @GetMapping("/categories")
+    public BlueCollarApiResponse<java.util.List<PLPResponse>> getAllCategoryDeals(@RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanViewDeals(sessionToken);
-        java.util.List<PLPData> response = dealsService.getAllCategoryPagesData();
+        java.util.List<PLPResponse> response = dealsService.getAllCategoryPagesData();
         return new BlueCollarApiResponse<>(response, 200);
     }
 
@@ -78,7 +77,7 @@ public class AdminDealsController {
         return new BlueCollarApiResponse<>(response, 200);
     }
 
-    @GetMapping("/brand")
+    @GetMapping("/brands")
     public BlueCollarApiResponse<java.util.List<PDPData>> getAllBrandDetails(@RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanViewDeals(sessionToken);
         java.util.List<PDPData> response = dealsService.getAllBrandPagesData();
@@ -100,6 +99,14 @@ public class AdminDealsController {
         sessionService.validateCanManageDeals(sessionToken);
         dealsService.deleteBrandDetailsById(id);
         return new BlueCollarApiResponse<>("Brand details deleted successfully", 200);
+    }
+    
+    @DeleteMapping("/category/{categoryId}")
+    public BlueCollarApiResponse<String> deleteCategoryDeals(@PathVariable String categoryId,
+                                                            @RequestHeader("Admin-Session-Token") String sessionToken) {
+        sessionService.validateCanManageDeals(sessionToken);
+        dealsService.deleteCategoryDeals(categoryId);
+        return new BlueCollarApiResponse<>("Category deals deleted successfully", 200);
     }
 
 

@@ -7,5 +7,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PLPRepository extends MongoRepository<PLP, String> {
     PLP findByCategoryIdAndActiveTrue(String categoryId);
-    void deleteByCategoryId(String categoryId);
 }

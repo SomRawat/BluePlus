@@ -127,9 +127,9 @@ public class DealsService {
         return response;
     }
 
-    public List<PLPData> getAllCategoryPagesData() {
+    public List<PLPResponse> getAllCategoryPagesData() {
         return plpRepository.findAll().stream()
-                .map(PLP::getData)
+                .map(plp -> new PLPResponse(plp.getCategoryId(), plp.getData(), plp.isActive()))
                 .collect(Collectors.toList());
     }
 
@@ -223,9 +223,6 @@ public class DealsService {
     }
     
     private void generateIdsForPLPData(PLPData data) {
-        if (data.getId() == null || data.getId().isEmpty()) {
-            data.setId(java.util.UUID.randomUUID().toString());
-        }
         if (data.getOffers() != null) {
             data.getOffers().forEach(offer -> {
                 if (offer.getId() == null || offer.getId().isEmpty()) {
@@ -286,29 +283,24 @@ public class DealsService {
     
     @Transactional
     public CategoryDealsResponse createCategoryDeals(String categoryId, PLPData plpData) {
-        // Generate IDs for PLP data
-        generateIdsForPLPData(plpData);
+        // Use categoryId from path or PLPData
+        String finalCategoryId = plpData.getCategoryId() != null ? plpData.getCategoryId() : categoryId;
+        plpData.setCategoryId(finalCategoryId);
         
-        PLP existingPlp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
-        
+        // Check if PLP exists
+        PLP existingPlp = plpRepository.findByCategoryIdAndActiveTrue(finalCategoryId);
         if (existingPlp != null) {
-            // Update existing record with only provided fields
-            PLPData existingData = existingPlp.getData();
-            if (plpData.getTitle() != null) existingData.setTitle(plpData.getTitle());
-            if (plpData.getTabs() != null) existingData.setTabs(plpData.getTabs());
-            if (plpData.getActiveTab() != null) existingData.setActiveTab(plpData.getActiveTab());
-            if (plpData.getOffers() != null) {
-                mergeOffers(existingData.getOffers(), plpData.getOffers());
-            }
-            existingData.setActive(plpData.isActive());
+            // Update existing
+            existingPlp.setData(plpData);
             plpRepository.save(existingPlp);
         } else {
-            // Create new record
-            PLP plp = new PLP(categoryId, plpData, true);
+            // Create new
+            generateIdsForPLPData(plpData);
+            PLP plp = new PLP(finalCategoryId, plpData, true);
             plpRepository.save(plp);
         }
         
-        return getCategoryDeals(categoryId, plpData.getActiveTab());
+        return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
     }
     
     @Transactional
@@ -334,7 +326,7 @@ public class DealsService {
     
     @Transactional
     public void deleteCategoryDeals(String categoryId) {
-        plpRepository.deleteByCategoryId(categoryId);
+        plpRepository.deleteById(categoryId);
     }
     
     @Transactional
