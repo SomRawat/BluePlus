@@ -19,9 +19,19 @@ public class BrandDetailsResponse {
     private boolean redeemed;
     private boolean isActive = true;
     
+    // Coupon fields
+    private CouponInfo couponInfo;
+    
     @Data
     public static class FAQDto {
         private String question;
         private String answer;
+    }
+    
+    @Data
+    public static class CouponInfo {
+        private String discountText;
+        private boolean available;
+        private int remainingCount;
     }
 }

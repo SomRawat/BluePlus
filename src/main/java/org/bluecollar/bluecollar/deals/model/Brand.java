@@ -28,6 +28,13 @@ public class Brand {
     private boolean active = true;
     private LocalDateTime createdAt = LocalDateTime.now();
     
+    // Coupon fields
+    private boolean hasCouponCampaign = false;
+    private String activeCampaignId;
+    private String couponDiscountText;
+    private int couponTotalLimit;
+    private LocalDateTime couponExpiresAt;
+    
     @Data
     public static class FAQ {
         private String question;

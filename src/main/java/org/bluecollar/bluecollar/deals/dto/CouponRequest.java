@@ -4,7 +4,10 @@ import lombok.Data;
 
 @Data
 public class CouponRequest {
+    private String campaignName;
     private String brandId;
-    private String city;
+    private String discountText;
+    private int totalLimit; // Total coupons available
     private int expiryDays;
+    private boolean isActive;
 }

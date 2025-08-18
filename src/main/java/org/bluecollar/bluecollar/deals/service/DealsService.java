@@ -8,9 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,9 +17,6 @@ public class DealsService {
     
     @Autowired
     private BannerRepository bannerRepository;
-    
-    @Autowired
-    private BrandRepository brandRepository;
     
     @Autowired
     private CategoryRepository categoryRepository;
@@ -43,9 +37,9 @@ public class DealsService {
         List<Banner> banners = bannerRepository.findByActiveTrue();
         response.setBanners(banners.stream().map(this::toBannerDto).collect(Collectors.toList()));
         
-        // Get popular brands
-        List<Brand> brands = brandRepository.findByActiveTrue();
-        response.setPopularBrands(brands.stream().map(this::toPopularBrandDto).collect(Collectors.toList()));
+        // Get popular brands from PDP
+        List<PDP> pdps = pdpRepository.findAll();
+        response.setPopularBrands(pdps.stream().map(this::toPopularBrandDto).collect(Collectors.toList()));
         
         // Get handpicked deals (same as banners for now)
         response.setHandpickedDeals(banners.stream().map(this::toHandpickedDealDto).collect(Collectors.toList()));
@@ -62,42 +56,38 @@ public class DealsService {
         
         return response;
     }
-
-    // Admin panel helper to fetch stored home page data
-    public HomePageData getHomePageData() {
-        List<HomePage> homePages = homePageRepository.findAll();
-        return homePages.isEmpty() ? new HomePageData() : homePages.get(0).getData();
-    }
     
     public BrandDetailsResponse getBrandDetails(String brandId) {
-        Brand brand = brandRepository.findByIdAndActiveTrue(brandId)
+        PDP pdp = pdpRepository.findById(brandId)
                 .orElseThrow(() -> new ResourceNotFoundException("Brand not found"));
         
         BrandDetailsResponse response = new BrandDetailsResponse();
-        response.setBrandName(brand.getName());
-        response.setBannerLink(brand.getImageUrl());
-        response.setBrandDescription(brand.getDescription());
-        response.setDiscountText(brand.getDiscountText());
+        response.setBrandName(pdp.getBrandName());
+        response.setBannerLink(pdp.getBannerLink());
+        response.setBrandDescription(pdp.getBrandDescription());
+        response.setDiscountText(pdp.getDiscountText());
+        response.setValidTill(pdp.getValidTill());
+        response.setHowItWorksBullets(pdp.getHowItWorksBullets());
+        response.setBenefits(pdp.getBenefits());
+        response.setHowToRedeemBullets(pdp.getHowToRedeemBullets());
+        response.setTermsAndConditions(pdp.getTermsAndConditions());
         
-        if (brand.getValidTill() != null) {
-            response.setValidTill("Valid till: " + brand.getValidTill().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+        if (pdp.getFaq() != null) {
+            response.setFaq(pdp.getFaq().stream().map(this::toPDPFAQDto).collect(Collectors.toList()));
         }
         
-        response.setHowItWorksBullets(Arrays.asList(brand.getHowItWorksBullets() != null ? brand.getHowItWorksBullets() : new String[0]));
-        response.setBenefits(Arrays.asList(brand.getBenefits() != null ? brand.getBenefits() : new String[0]));
-        response.setHowToRedeemBullets(Arrays.asList(brand.getHowToRedeemBullets() != null ? brand.getHowToRedeemBullets() : new String[0]));
-        response.setTermsAndConditions(Arrays.asList(brand.getTermsAndConditions() != null ? brand.getTermsAndConditions() : new String[0]));
+        response.setRedeemLink(pdp.getRedeemLink());
+        response.setRedeemed(pdp.isRedeemed());
+        response.setActive(pdp.isActive());
         
-        if (brand.getFaq() != null) {
-            response.setFaq(Arrays.stream(brand.getFaq()).map(this::toFAQDto).collect(Collectors.toList()));
+        // Add coupon info if available
+        if (pdp.getCouponInfo() != null) {
+            BrandDetailsResponse.CouponInfo couponInfo = new BrandDetailsResponse.CouponInfo();
+            couponInfo.setDiscountText(pdp.getCouponInfo().getDiscountText());
+            couponInfo.setAvailable(pdp.getCouponInfo().isAvailable());
+            couponInfo.setRemainingCount(pdp.getCouponInfo().getRemainingCount());
+            response.setCouponInfo(couponInfo);
         }
-        
-        response.setRedeemLink(brand.getRedeemLink());
-        // Set redeemed flag default
-        response.setRedeemed(false);
-        
-        // Set default active status
-        response.setActive(true);
         
         return response;
     }
@@ -111,287 +101,25 @@ public class DealsService {
         response.setTabs(Arrays.asList("All Deals", "Nearby", "Popular", "Trending", "Latest", "Top Rated"));
         response.setActiveTab(tab != null ? tab : "All Deals");
         
-        // Get offers from PLP data if exists, otherwise use brands
+        // Get offers from PLP data if exists, otherwise use PDPs
         PLP plp = plpRepository.findById(categoryId).orElse(null);
         if (plp != null && plp.getOffers() != null) {
             response.setOffers(plp.getOffers().stream().map(this::toOfferResponseDto).collect(Collectors.toList()));
             response.setActive(plp.isActive());
         } else {
-            // Fallback to brands as offers
-            List<Brand> brands = brandRepository.findByActiveTrue();
-            response.setOffers(brands.stream().map(this::toOfferDto).collect(Collectors.toList()));
+            // Fallback to PDPs as offers
+            List<PDP> pdps = pdpRepository.findAll();
+            response.setOffers(pdps.stream().map(this::toOfferDto).collect(Collectors.toList()));
         }
         
         return response;
     }
 
-    public List<PLPResponse> getAllCategoryPagesData() {
-        return plpRepository.findAll().stream()
-                .map(plp -> {
-                    PLPResponse response = new PLPResponse();
-                    response.setCategoryId(plp.getCategoryId());
-                    response.setTitle(plp.getTitle());
-                    response.setTabs(plp.getTabs());
-                    response.setActiveTab(plp.getActiveTab());
-                    response.setOffers(plp.getOffers());
-                    response.setActive(plp.isActive());
-                    return response;
-                })
-                .collect(Collectors.toList());
-    }
-
-    public List<PDPData> getAllBrandPagesData() {
-        return pdpRepository.findAll().stream()
-                .map(this::convertPDPToPDPData)
-                .collect(Collectors.toList());
+    public BrandDetailsResponse addCouponInfoToBrandDetails(BrandDetailsResponse response, String brandId, String sessionToken) {
+        // This method is no longer needed as coupon info is embedded in PDP
+        return response;
     }
     
-    // Admin methods for managing deals
-    @Transactional
-    public HomePageResponse createHomePage(HomePageData homePageData) {
-        // Generate IDs for items that don't have them
-        generateIdsForHomePageItems(homePageData);
-        
-        List<HomePage> existingPages = homePageRepository.findAll();
-        
-        if (!existingPages.isEmpty()) {
-            // Update existing home page
-            HomePage existingPage = existingPages.get(0);
-            HomePageData existingData = existingPage.getData();
-            
-            // Merge items by ID instead of replacing entire arrays
-            if (homePageData.getBanners() != null) {
-                mergeBanners(existingData.getBanners(), homePageData.getBanners());
-            }
-            if (homePageData.getPopularBrands() != null) {
-                mergePopularBrands(existingData.getPopularBrands(), homePageData.getPopularBrands());
-            }
-            if (homePageData.getHandpickedDeals() != null) {
-                mergeHandpickedDeals(existingData.getHandpickedDeals(), homePageData.getHandpickedDeals());
-            }
-            if (homePageData.getCategories() != null) {
-                mergeCategories(existingData.getCategories(), homePageData.getCategories());
-            }
-            existingData.setActive(homePageData.isActive());
-            
-            homePageRepository.save(existingPage);
-        } else {
-            // Create new home page
-            HomePage homePage = new HomePage(homePageData, homePageData.isActive());
-            homePageRepository.save(homePage);
-        }
-        
-        return getHomePage();
-    }
-    
-    private void mergeBanners(List<HomePageData.BannerItem> existing, List<HomePageData.BannerItem> newItems) {
-        for (HomePageData.BannerItem newItem : newItems) {
-            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
-                existing.removeIf(item -> newItem.getId().equals(item.getId()));
-            }
-            existing.add(newItem);
-        }
-    }
-    
-    private void mergePopularBrands(List<HomePageData.PopularBrand> existing, List<HomePageData.PopularBrand> newItems) {
-        for (HomePageData.PopularBrand newItem : newItems) {
-            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
-                existing.removeIf(item -> newItem.getId().equals(item.getId()));
-            }
-            existing.add(newItem);
-        }
-    }
-    
-    private void mergeHandpickedDeals(List<HomePageData.HandpickedDeal> existing, List<HomePageData.HandpickedDeal> newItems) {
-        for (HomePageData.HandpickedDeal newItem : newItems) {
-            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
-                existing.removeIf(item -> newItem.getId().equals(item.getId()));
-            }
-            existing.add(newItem);
-        }
-    }
-    
-    private void mergeCategories(List<HomePageData.CategoryItem> existing, List<HomePageData.CategoryItem> newItems) {
-        for (HomePageData.CategoryItem newItem : newItems) {
-            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
-                existing.removeIf(item -> newItem.getId().equals(item.getId()));
-            }
-            existing.add(newItem);
-        }
-    }
-    
-    private void mergeOffers(List<PLPData.OfferItem> existing, List<PLPData.OfferItem> newItems) {
-        for (PLPData.OfferItem newItem : newItems) {
-            if (newItem.getId() != null && !newItem.getId().isEmpty()) {
-                existing.removeIf(item -> newItem.getId().equals(item.getId()));
-            }
-            existing.add(newItem);
-        }
-    }
-    
-    private void generateIdsForPLPData(PLPData data) {
-        if (data.getOffers() != null) {
-            data.getOffers().forEach(offer -> {
-                if (offer.getId() == null || offer.getId().isEmpty()) {
-                    offer.setId(java.util.UUID.randomUUID().toString());
-                }
-            });
-        }
-    }
-    
-    private void generateIdsForPDPData(PDPData data) {
-        if (data.getId() == null || data.getId().isEmpty()) {
-            data.setId(java.util.UUID.randomUUID().toString());
-        }
-        if (data.getFaq() != null) {
-            data.getFaq().forEach(faq -> {
-                if (faq.getId() == null || faq.getId().isEmpty()) {
-                    faq.setId(java.util.UUID.randomUUID().toString());
-                }
-            });
-        }
-    }
-    
-    private void generateIdsForHomePageItems(HomePageData data) {
-        if (data.getBanners() != null) {
-            data.getBanners().forEach(banner -> {
-                if (banner.getId() == null || banner.getId().isEmpty()) {
-                    banner.setId(java.util.UUID.randomUUID().toString());
-                }
-            });
-        }
-        if (data.getPopularBrands() != null) {
-            data.getPopularBrands().forEach(brand -> {
-                if (brand.getId() == null || brand.getId().isEmpty()) {
-                    brand.setId(java.util.UUID.randomUUID().toString());
-                }
-            });
-        }
-        if (data.getHandpickedDeals() != null) {
-            data.getHandpickedDeals().forEach(deal -> {
-                if (deal.getId() == null || deal.getId().isEmpty()) {
-                    deal.setId(java.util.UUID.randomUUID().toString());
-                }
-            });
-        }
-        if (data.getCategories() != null) {
-            data.getCategories().forEach(category -> {
-                if (category.getId() == null || category.getId().isEmpty()) {
-                    category.setId(java.util.UUID.randomUUID().toString());
-                }
-            });
-        }
-    }
-    
-    @Transactional
-    public HomePageResponse updateHomePage(HomePageData homePageData) {
-        return createHomePage(homePageData); // For now, just recreate
-    }
-    
-    @Transactional
-    public CategoryDealsResponse createCategoryDeals(PLPData plpData) {
-        String finalCategoryId = plpData.getCategoryId();
-        
-        if (finalCategoryId != null && !finalCategoryId.isEmpty()) {
-            // UPDATE: categoryId provided - try to update existing
-            PLP existingPlp = plpRepository.findById(finalCategoryId).orElse(null);
-            if (existingPlp != null) {
-                existingPlp.setTitle(plpData.getTitle());
-                existingPlp.setTabs(plpData.getTabs());
-                existingPlp.setActiveTab(plpData.getActiveTab());
-                
-                // Merge offers instead of replacing
-                if (plpData.getOffers() != null) {
-                    for (PLPData.OfferItem newOffer : plpData.getOffers()) {
-                        if (newOffer.getId() == null || newOffer.getId().isEmpty()) {
-                            // New offer - generate ID and add
-                            newOffer.setId(java.util.UUID.randomUUID().toString());
-                            existingPlp.getOffers().add(new PLP.OfferItem(newOffer));
-                        } else {
-                            // Update existing offer by ID
-                            existingPlp.getOffers().removeIf(offer -> newOffer.getId().equals(offer.getId()));
-                            existingPlp.getOffers().add(new PLP.OfferItem(newOffer));
-                        }
-                    }
-                }
-                
-                existingPlp.setActive(plpData.isActive());
-                plpRepository.save(existingPlp);
-                return getCategoryDeals(finalCategoryId, plpData.getActiveTab());
-            }
-        }
-
-        // CREATE: Let MongoDB auto-generate categoryId (pass null)
-        generateIdsForPLPData(plpData);
-        PLP plp = new PLP(null, plpData, true); // null = MongoDB auto-generates ID
-        PLP savedPlp = plpRepository.save(plp);
-        
-        return getCategoryDeals(savedPlp.getCategoryId(), plpData.getActiveTab());
-    }
-    
-    @Transactional
-    public BrandDetailsResponse createBrandDetails(PDPData pdpData) {
-        if (pdpData.getId() != null && !pdpData.getId().isEmpty()) {
-            // Update existing PDP by ID
-            PDP existingPdp = pdpRepository.findById(pdpData.getId()).orElse(null);
-            if (existingPdp != null) {
-                updatePDPFromData(existingPdp, pdpData);
-                pdpRepository.save(existingPdp);
-                return convertPDPToBrandDetailsResponse(existingPdp);
-            }
-        }
-        
-        // Create new PDP
-        generateIdsForPDPData(pdpData);
-        PDP pdp = new PDP(null, pdpData, true); // null brandId, let MongoDB generate ID
-        PDP savedPdp = pdpRepository.save(pdp);
-        
-        return convertPDPToBrandDetailsResponse(savedPdp);
-    }
-    
-    @Transactional
-    public void deleteCategoryDeals(String categoryId) {
-        plpRepository.deleteById(categoryId);
-    }
-    
-    @Transactional
-    public void deleteCategoryOffer(String categoryId, String offerId) {
-        PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
-        if (plp != null) {
-            plp.getOffers().removeIf(offer -> offerId.equals(offer.getId()));
-            plpRepository.save(plp);
-        }
-    }
-    
-    @Transactional
-    public void deleteBrandDetails(String brandId) {
-        // This method is now deprecated, use deleteBrandDetailsById instead
-        throw new UnsupportedOperationException("Use deleteBrandDetailsById instead");
-    }
-    
-    @Transactional
-    public void deleteBrandDetailsById(String id) {
-        pdpRepository.deleteById(id);
-    }
-    
-    @Transactional
-    public void deleteHomePageItem(HomePageItemType type, String id) {
-        List<HomePage> homePages = homePageRepository.findAll();
-        if (!homePages.isEmpty()) {
-            HomePage homePage = homePages.get(0);
-            HomePageData data = homePage.getData();
-            
-            switch (type) {
-                case banners -> data.getBanners().removeIf(banner -> id.equals(banner.getId()));
-                case popularBrands -> data.getPopularBrands().removeIf(brand -> id.equals(brand.getId()));
-                case handpickedDeals -> data.getHandpickedDeals().removeIf(deal -> id.equals(deal.getId()));
-                case categories -> data.getCategories().removeIf(category -> id.equals(category.getId()));
-            }
-            
-            homePageRepository.save(homePage);
-        }
-    }
-
     private HomePageResponse.BannerDto toBannerDto(Banner banner) {
         HomePageResponse.BannerDto dto = new HomePageResponse.BannerDto();
         dto.setId(banner.getId());
@@ -400,12 +128,12 @@ public class DealsService {
         return dto;
     }
     
-    private HomePageResponse.PopularBrandDto toPopularBrandDto(Brand brand) {
+    private HomePageResponse.PopularBrandDto toPopularBrandDto(PDP pdp) {
         HomePageResponse.PopularBrandDto dto = new HomePageResponse.PopularBrandDto();
-        dto.setName(brand.getName());
-        dto.setDiscount(brand.getDiscount());
-        dto.setImageUrl(brand.getImageUrl());
-        dto.setRedirectionLink(brand.getRedirectionLink());
+        dto.setName(pdp.getBrandName());
+        dto.setDiscount(pdp.getDiscountText());
+        dto.setImageUrl(pdp.getBannerLink());
+        dto.setRedirectionLink("/brand/" + pdp.getId());
         return dto;
     }
     
@@ -426,20 +154,20 @@ public class DealsService {
         return dto;
     }
     
-    private BrandDetailsResponse.FAQDto toFAQDto(Brand.FAQ faq) {
+    private BrandDetailsResponse.FAQDto toPDPFAQDto(PDP.FAQItem faq) {
         BrandDetailsResponse.FAQDto dto = new BrandDetailsResponse.FAQDto();
         dto.setQuestion(faq.getQuestion());
         dto.setAnswer(faq.getAnswer());
         return dto;
     }
     
-    private CategoryDealsResponse.OfferDto toOfferDto(Brand brand) {
+    private CategoryDealsResponse.OfferDto toOfferDto(PDP pdp) {
         CategoryDealsResponse.OfferDto dto = new CategoryDealsResponse.OfferDto();
-        dto.setId(brand.getId());
-        dto.setBrand(brand.getName());
-        dto.setDiscount(brand.getDiscount());
-        dto.setDiscountLabel("On " + brand.getName().toLowerCase());
-        dto.setImageUrl(brand.getImageUrl());
+        dto.setId(pdp.getId());
+        dto.setBrand(pdp.getBrandName());
+        dto.setDiscount(pdp.getDiscountText());
+        dto.setDiscountLabel("On " + pdp.getBrandName().toLowerCase());
+        dto.setImageUrl(pdp.getBannerLink());
         return dto;
     }
     
@@ -450,87 +178,6 @@ public class DealsService {
         dto.setDiscount(offer.getDiscount());
         dto.setDiscountLabel(offer.getDiscountLabel());
         dto.setImageUrl(offer.getImageUrl());
-        return dto;
-    }
-    
-    private BrandDetailsResponse convertPDPToBrandDetailsResponse(PDP pdp) {
-        BrandDetailsResponse response = new BrandDetailsResponse();
-        response.setBrandName(pdp.getBrandName());
-        response.setBannerLink(pdp.getBannerLink());
-        response.setBrandDescription(pdp.getBrandDescription());
-        response.setDiscountText(pdp.getDiscountText());
-        response.setValidTill(pdp.getValidTill());
-        response.setHowItWorksBullets(pdp.getHowItWorksBullets());
-        response.setBenefits(pdp.getBenefits());
-        response.setHowToRedeemBullets(pdp.getHowToRedeemBullets());
-        response.setTermsAndConditions(pdp.getTermsAndConditions());
-        if (pdp.getFaq() != null) {
-            response.setFaq(pdp.getFaq().stream().map(this::toPDPEntityFAQDto).collect(Collectors.toList()));
-        }
-        response.setRedeemLink(pdp.getRedeemLink());
-        response.setRedeemed(pdp.isRedeemed());
-        response.setActive(pdp.isActive());
-        return response;
-    }
-    
-    private PDPData convertPDPToPDPData(PDP pdp) {
-        PDPData data = new PDPData();
-        data.setId(pdp.getId());
-        data.setCategoryId(pdp.getCategoryId());
-        data.setBrandName(pdp.getBrandName());
-        data.setBannerLink(pdp.getBannerLink());
-        data.setBrandDescription(pdp.getBrandDescription());
-        data.setDiscountText(pdp.getDiscountText());
-        data.setValidTill(pdp.getValidTill());
-        data.setHowItWorksBullets(pdp.getHowItWorksBullets());
-        data.setBenefits(pdp.getBenefits());
-        data.setHowToRedeemBullets(pdp.getHowToRedeemBullets());
-        data.setTermsAndConditions(pdp.getTermsAndConditions());
-        if (pdp.getFaq() != null) {
-            data.setFaq(pdp.getFaq().stream().map(faq -> {
-                PDPData.FAQItem dto = new PDPData.FAQItem();
-                dto.setId(faq.getId());
-                dto.setQuestion(faq.getQuestion());
-                dto.setAnswer(faq.getAnswer());
-                return dto;
-            }).collect(Collectors.toList()));
-        }
-        data.setRedeemLink(pdp.getRedeemLink());
-        data.setRedeemed(pdp.isRedeemed());
-        data.setActive(pdp.isActive());
-        return data;
-    }
-    
-    private void updatePDPFromData(PDP pdp, PDPData data) {
-        pdp.setCategoryId(data.getCategoryId());
-        pdp.setBrandName(data.getBrandName());
-        pdp.setBannerLink(data.getBannerLink());
-        pdp.setBrandDescription(data.getBrandDescription());
-        pdp.setDiscountText(data.getDiscountText());
-        pdp.setValidTill(data.getValidTill());
-        pdp.setHowItWorksBullets(data.getHowItWorksBullets());
-        pdp.setBenefits(data.getBenefits());
-        pdp.setHowToRedeemBullets(data.getHowToRedeemBullets());
-        pdp.setTermsAndConditions(data.getTermsAndConditions());
-        pdp.setFaq(data.getFaq() != null ? 
-            data.getFaq().stream().map(PDP.FAQItem::new).collect(Collectors.toList()) : 
-            new ArrayList<>());
-        pdp.setRedeemLink(data.getRedeemLink());
-        pdp.setRedeemed(data.isRedeemed());
-        pdp.setActive(data.isActive());
-    }
-    
-    private BrandDetailsResponse.FAQDto toPDPFAQDto(PDPData.FAQItem faq) {
-        BrandDetailsResponse.FAQDto dto = new BrandDetailsResponse.FAQDto();
-        dto.setQuestion(faq.getQuestion());
-        dto.setAnswer(faq.getAnswer());
-        return dto;
-    }
-    
-    private BrandDetailsResponse.FAQDto toPDPEntityFAQDto(PDP.FAQItem faq) {
-        BrandDetailsResponse.FAQDto dto = new BrandDetailsResponse.FAQDto();
-        dto.setQuestion(faq.getQuestion());
-        dto.setAnswer(faq.getAnswer());
         return dto;
     }
 }

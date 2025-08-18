@@ -30,6 +30,10 @@ public class PDP {
     private boolean redeemed;
     private boolean active = true;
     
+    // Coupon fields
+    private String activeCampaignId;
+    private CouponInfo couponInfo;
+    
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -43,6 +47,14 @@ public class PDP {
             this.question = dto.getQuestion();
             this.answer = dto.getAnswer();
         }
+    }
+    
+    @Data
+    @NoArgsConstructor
+    public static class CouponInfo {
+        private String discountText;
+        private boolean available;
+        private int remainingCount;
     }
 
     public PDP(String brandId, PDPData data, boolean active) {
