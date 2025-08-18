@@ -65,7 +65,7 @@ public class DealsService {
         response.setBrandName(pdp.getBrandName());
         response.setBannerLink(pdp.getBannerLink());
         response.setBrandDescription(pdp.getBrandDescription());
-        response.setDiscountText(pdp.getDiscountText());
+        response.setCouponCode(pdp.getCouponCode());
         response.setValidTill(pdp.getValidTill());
         response.setHowItWorksBullets(pdp.getHowItWorksBullets());
         response.setBenefits(pdp.getBenefits());
@@ -83,7 +83,7 @@ public class DealsService {
         // Add coupon info if available
         if (pdp.getCouponInfo() != null) {
             BrandDetailsResponse.CouponInfo couponInfo = new BrandDetailsResponse.CouponInfo();
-            couponInfo.setDiscountText(pdp.getCouponInfo().getDiscountText());
+            couponInfo.setCouponCode(pdp.getCouponInfo().getCouponCode());
             couponInfo.setAvailable(pdp.getCouponInfo().isAvailable());
             couponInfo.setRemainingCount(pdp.getCouponInfo().getRemainingCount());
             response.setCouponInfo(couponInfo);
@@ -131,7 +131,7 @@ public class DealsService {
     private HomePageResponse.PopularBrandDto toPopularBrandDto(PDP pdp) {
         HomePageResponse.PopularBrandDto dto = new HomePageResponse.PopularBrandDto();
         dto.setName(pdp.getBrandName());
-        dto.setDiscount(pdp.getDiscountText());
+        dto.setDiscount(pdp.getCouponCode());
         dto.setImageUrl(pdp.getBannerLink());
         dto.setRedirectionLink("/brand/" + pdp.getId());
         return dto;
@@ -165,7 +165,7 @@ public class DealsService {
         CategoryDealsResponse.OfferDto dto = new CategoryDealsResponse.OfferDto();
         dto.setId(pdp.getId());
         dto.setBrand(pdp.getBrandName());
-        dto.setDiscount(pdp.getDiscountText());
+        dto.setDiscount(pdp.getCouponCode());
         dto.setDiscountLabel("On " + pdp.getBrandName().toLowerCase());
         dto.setImageUrl(pdp.getBannerLink());
         return dto;

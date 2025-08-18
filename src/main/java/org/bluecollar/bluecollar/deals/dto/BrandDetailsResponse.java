@@ -8,7 +8,7 @@ public class BrandDetailsResponse {
     private String brandName;
     private String bannerLink;
     private String brandDescription;
-    private String discountText;
+    private String couponCode;
     private String validTill;
     private List<String> howItWorksBullets;
     private List<String> benefits;
@@ -30,7 +30,7 @@ public class BrandDetailsResponse {
     
     @Data
     public static class CouponInfo {
-        private String discountText;
+        private String couponCode;
         private boolean available;
         private int remainingCount;
     }
