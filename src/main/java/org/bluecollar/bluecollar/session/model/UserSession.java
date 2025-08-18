@@ -1,10 +1,14 @@
 package org.bluecollar.bluecollar.session.model;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
 import java.time.LocalDateTime;
 
+@Data
+@NoArgsConstructor
 @Document(collection = "user_sessions")
 public class UserSession {
     
@@ -19,11 +23,7 @@ public class UserSession {
     
     private LocalDateTime expiresAt;
     private String clientType;
-    private LocalDateTime createdAt;
-    
-    public UserSession() {
-        this.createdAt = LocalDateTime.now();
-    }
+    private LocalDateTime createdAt = LocalDateTime.now();
     
     public UserSession(String sessionToken, String customerId, String clientType) {
         this();
@@ -40,26 +40,4 @@ public class UserSession {
             this.expiresAt = LocalDateTime.now().plusDays(3);
         }
     }
-    
-    // Getters and Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    
-    public String getSessionToken() { return sessionToken; }
-    public void setSessionToken(String sessionToken) { this.sessionToken = sessionToken; }
-    
-    public String getCustomerId() { return customerId; }
-    public void setCustomerId(String customerId) { this.customerId = customerId; }
-    
-    public String getCurrentSection() { return currentSection; }
-    public void setCurrentSection(String currentSection) { this.currentSection = currentSection; }
-    
-    public LocalDateTime getExpiresAt() { return expiresAt; }
-    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
-    
-    public String getClientType() { return clientType; }
-    public void setClientType(String clientType) { this.clientType = clientType; }
-    
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
