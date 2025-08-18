@@ -1,204 +1,330 @@
-# BlueCollar API
+# BlueCollar - Deals Management Platform
 
-Production-ready Spring Boot application with authentication, payment integration, deals system, and coupon management.
+A comprehensive deals management platform with role-based admin system, customer authentication, and deal management capabilities.
 
-## Features
+## 🚀 Features
 
-- **Authentication**: OTP-based and Google OAuth login
-- **Session Management**: Client-specific session expiry (30 days mobile, 3 days web)
-- **Payment Integration**: Razorpay with fallback mechanisms
-- **Deals System**: Home page, brand details (PDP), category-wise deals
-- **Coupon Management**: City-based coupon creation, redemption with expiry
-- **Admin Panel**: CRUD operations with role-based access
-- **Security**: Input validation, rate limiting, password encryption
-- **Monitoring**: Health checks, metrics, logging
+### Customer Features
+- **Mobile OTP Authentication** - Secure login with SMS verification
+- **Google OAuth Integration** - Social login support
+- **Profile Management** - Update customer information
+- **Deals Browsing** - View home page, category deals, and brand details
 
-## Tech Stack
+### Admin Features
+- **Role-Based Access Control** - Multiple admin roles with different permissions
+- **Admin Management** - Create, update, and manage admin users
+- **Deal Management** - Create, update, and delete deals
+- **Session Management** - Secure admin sessions
 
-- Java 21
-- Spring Boot 3.5.3
-- MongoDB
-- Razorpay
+## 🏗️ Architecture
 
-## Quick Start
+### Admin Roles
+1. **SUPER_ADMIN** - Full access to all features including user management
+2. **ADMIN** - Can manage deals and view reports
+3. **DEAL_MANAGER** - Can only manage deals
+4. **VIEWER** - Read-only access to view data
+
+### Technology Stack
+- **Backend**: Spring Boot 3.5.3 with Java 21
+- **Database**: MongoDB
+- **Authentication**: JWT tokens, OAuth2
+- **SMS**: Twilio integration
+- **Payment**: Razorpay integration
+- **Security**: Spring Security with BCrypt
+
+## 📁 Project Structure
+
+```
+src/main/java/org/bluecollar/bluecollar/
+├── admin/                 # Admin management
+│   ├── controller/       # Admin controllers
+│   ├── dto/             # Admin DTOs
+│   ├── model/           # Admin models
+│   ├── repository/      # Admin repositories
+│   └── service/         # Admin services
+├── common/              # Shared components
+│   ├── dto/            # Common DTOs
+│   ├── exception/      # Custom exceptions
+│   ├── service/        # Shared services
+│   └── util/           # Utility classes
+├── config/             # Configuration classes
+├── deals/              # Deals management
+├── feedback/           # Feedback system
+├── login/              # Authentication
+├── payment/            # Payment processing
+└── session/            # Session management
+```
+
+## 🔧 Setup & Installation
 
 ### Prerequisites
 - Java 21
 - MongoDB
-- Razorpay account
+- Gradle
 
-### Local Development
+### Environment Variables
+Create a `.env` file or set environment variables:
+
 ```bash
-# Clone repository
-git clone <repository-url>
-cd BlueCollar
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/bluecollar
+MONGODB_DATABASE=bluecollar
 
-# Set environment variables
-cp .env.example .env
-# Edit .env with your configuration
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRATION=86400000
 
-# Run application
-./gradlew bootRun
+# Razorpay
+RAZORPAY_KEY_ID=your-razorpay-key
+RAZORPAY_KEY_SECRET=your-razorpay-secret
+
+# Twilio
+TWILIO_ACCOUNT_SID=your-twilio-sid
+TWILIO_AUTH_TOKEN=your-twilio-token
+TWILIO_PHONE_NUMBER=your-twilio-number
+
+# Google OAuth
+GOOGLE_OAUTH_CLIENT_ID=your-google-client-id
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 ```
 
-### Production Deployment
-```bash
-# Build application
-./gradlew build
+### Running the Application
 
-# Run with Docker
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd BlueCollar
+   ```
+
+2. **Build the project**
+   ```bash
+   ./gradlew clean build
+   ```
+
+3. **Run the application**
+   ```bash
+   ./gradlew bootRun
+   ```
+
+4. **Access the application**
+   - Application: http://localhost:8080
+   - API Documentation: http://localhost:8080/swagger-ui.html
+
+## 🔐 Admin System
+
+### Default Super Admin
+The system automatically creates a default super admin on first startup:
+- **Email**: admin@bluecollar.com
+- **Password**: admin123
+
+### Admin API Endpoints
+
+#### Authentication
+```bash
+# Admin Login
+POST /api/admin/login
+{
+  "email": "admin@bluecollar.com",
+  "password": "admin123"
+}
+
+# Admin Logout
+POST /api/admin/logout
+Header: Admin-Session-Token: <session-token>
+```
+
+#### Admin Management (SUPER_ADMIN only)
+```bash
+# Create Admin
+POST /api/admin/create
+Header: Admin-Session-Token: <session-token>
+{
+  "email": "newadmin@example.com",
+  "password": "password123",
+  "name": "New Admin",
+  "role": "DEAL_MANAGER"
+}
+
+# List Admins (role-scoped)
+GET /api/admin/list
+Header: Admin-Session-Token: <session-token>
+Note: SUPER_ADMIN sees all; ADMIN sees only VIEWERs
+
+# Update Admin Role
+PUT /api/admin/{adminId}/role
+Header: Admin-Session-Token: <session-token>
+{
+  "role": "ADMIN"
+}
+
+# Activate/Deactivate Admin
+PUT /api/admin/{adminId}/activate
+PUT /api/admin/{adminId}/deactivate
+Header: Admin-Session-Token: <session-token>
+
+# Delete Admin
+DELETE /api/admin/{adminId}
+Header: Admin-Session-Token: <session-token>
+```
+
+#### Deal Management (ADMIN, DEAL_MANAGER, SUPER_ADMIN)
+```bash
+# Create/Update Home Page
+POST /api/admin/deals/home
+PUT /api/admin/deals/home
+Header: Admin-Session-Token: <session-token>
+{
+  "banners": [...],
+  "popularBrands": [...],
+  "handpickedDeals": [...],
+  "categories": [...]
+}
+
+# Create/Update Category Deals
+POST /api/admin/deals/category/{categoryId}
+PUT /api/admin/deals/category/{categoryId}
+Header: Admin-Session-Token: <session-token>
+{
+  "title": "Fashion",
+  "tabs": ["All Deals", "Popular"],
+  "activeTab": "All Deals",
+  "offers": [...]
+}
+
+# Create/Update Brand Details
+POST /api/admin/deals/brand/{brandId}
+PUT /api/admin/deals/brand/{brandId}
+Header: Admin-Session-Token: <session-token>
+{
+  "brandName": "Myntra",
+  "bannerLink": "...",
+  "brandDescription": "...",
+  "discountText": "15% off",
+  "validTill": "Valid till: Jun 15, 2025",
+  "howItWorksBullets": [...],
+  "benefits": [...],
+  "howToRedeemBullets": [...],
+  "termsAndConditions": [...],
+  "faq": [...],
+  "redeemLink": "/scratchCards/id"
+}
+
+# Delete Deals
+DELETE /api/admin/deals/category/{categoryId}
+DELETE /api/admin/deals/brand/{brandId}
+Header: Admin-Session-Token: <session-token>
+
+# List All Deals
+GET /api/admin/deals/list
+Header: Admin-Session-Token: <session-token>
+```
+
+## 👥 Customer API
+
+### Authentication
+```bash
+# Send OTP
+POST /api/auth/send-otp
+{
+  "mobile": "9876543210",
+  "phoneCode": "+91"
+}
+
+# Verify OTP
+POST /api/auth/verify-otp
+{
+  "mobile": "9876543210",
+  "otp": "123456"
+}
+
+# Google OAuth
+POST /api/auth/google-auth
+{
+  "idToken": "google-id-token"
+}
+```
+
+### Profile Management
+```bash
+# Update Profile
+PUT /api/auth/update-profile
+Header: Session-Token: <session-token>
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+
+# Get Profile
+GET /api/auth/profile
+Header: Session-Token: <session-token>
+```
+
+### Deals Browsing
+```bash
+# Get Home Page
+GET /api/deals/home
+
+# Get Category Deals
+GET /api/deals/category/{categoryId}?tab=Popular
+
+# Get Brand Details
+GET /api/deals/brand/{brandId}
+```
+
+## 🛡️ Security Features
+
+- **Role-based Access Control** - Different permissions for different admin roles
+- **Session Management** - Secure admin and customer sessions
+- **Input Validation** - Comprehensive validation for all inputs
+- **Exception Handling** - Proper error handling and logging
+- **CORS Configuration** - Configurable CORS settings
+- **Password Encryption** - BCrypt password hashing
+
+## 📊 Monitoring
+
+- **Health Checks**: `/actuator/health`
+- **Metrics**: `/actuator/metrics`
+- **Prometheus**: `/actuator/prometheus`
+
+## 🧪 Testing
+
+```bash
+# Run tests
+./gradlew test
+
+# Run with coverage
+./gradlew test jacocoTestReport
+```
+
+## 🐳 Docker
+
+```bash
+# Build Docker image
+docker build -t bluecollar .
+
+# Run with Docker Compose
 docker-compose up -d
 ```
 
-## API Documentation
+## 📝 API Documentation
 
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
 - **API Docs**: http://localhost:8080/api-docs
-- **Health Check**: http://localhost:8080/actuator/health
 
-## Environment Variables
+## 🤝 Contributing
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| MONGODB_URI | MongoDB connection string | mongodb://localhost:27017/bluecollar |
-| RAZORPAY_KEY_ID | Razorpay key ID | - |
-| RAZORPAY_KEY_SECRET | Razorpay key secret | - |
-| ALLOWED_ORIGINS | CORS allowed origins | * |
-| PORT | Application port | 8080 |
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-## Security Features
+## 📄 License
 
-- BCrypt password hashing
-- Session-based authentication
-- Input validation and sanitization
-- Rate limiting for OTP requests
-- SQL injection and XSS prevention
-- Secure headers (HSTS, X-Frame-Options)
+This project is licensed under the MIT License.
 
-## Monitoring
+## 🆘 Support
 
-- Health checks via Spring Actuator
-- Prometheus metrics
-- Request logging
-- Error tracking
-
-## System Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Mobile App    │    │    Web App      │    │   Admin Panel   │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌─────────────┴─────────────┐
-                    │    BlueCollar API         │
-                    │  (Spring Boot 3.5.3)     │
-                    └─────────────┬─────────────┘
-                                  │
-                    ┌─────────────┴─────────────┐
-                    │      MongoDB Atlas        │
-                    │   (Database Storage)      │
-                    └───────────────────────────┘
-```
-
-## Complete API Flow
-
-### 1. User Authentication Flow
-```bash
-# Step 1: Send OTP
-curl -X POST http://localhost:8080/api/auth/send-otp \
-  -H "Content-Type: application/json" \
-  -d '{"mobile":"9876543210"}'
-
-# Step 2: Verify OTP (Get Session Token)
-curl -X POST http://localhost:8080/api/auth/verify-otp \
-  -H "Content-Type: application/json" \
-  -H "Api-Client: web" \
-  -d '{"mobile":"9876543210","otp":"123456"}'
-
-# Response: {"result":{"token":"session-token-here","isFirstTime":true,"customerId":"customer-id","message":"Login successful"},"status":200}
-```
-
-### 2. Deals System Flow
-```bash
-# Get Home Page Data
-curl -X GET http://localhost:8080/api/deals/home
-
-# Get Brand Details (PDP)
-curl -X GET http://localhost:8080/api/deals/brand/{brandId}
-
-# Get Category Deals with Filters
-curl -X GET "http://localhost:8080/api/deals/category/{categoryId}?tab=Popular"
-```
-
-### 3. Coupon Management Flow
-```bash
-# Create Coupon for User
-curl -X POST http://localhost:8080/api/coupons/create \
-  -H "Content-Type: application/json" \
-  -H "Session-Token: your-session-token" \
-  -d '{"brandId":"brand-id","city":"Mumbai","expiryDays":30}'
-
-# Get User's Active Coupons
-curl -X GET http://localhost:8080/api/coupons/active \
-  -H "Session-Token: your-session-token"
-
-# Redeem Coupon
-curl -X POST http://localhost:8080/api/coupons/redeem/{couponCode} \
-  -H "Session-Token: your-session-token"
-
-# Get All User Coupons (Active + Redeemed)
-curl -X GET http://localhost:8080/api/coupons/my-coupons \
-  -H "Session-Token: your-session-token"
-```
-
-### 4. Payment Integration Flow
-```bash
-# Create Payment
-curl -X POST http://localhost:8080/api/payment/create \
-  -H "Content-Type: application/json" \
-  -H "Session-Token: your-session-token" \
-  -d '{"amount":100,"description":"Service payment"}'
-
-# Verify Payment
-curl -X POST http://localhost:8080/api/payment/verify \
-  -H "Content-Type: application/json" \
-  -d '{"razorpayOrderId":"order_id","razorpayPaymentId":"payment_id","razorpaySignature":"signature"}'
-```
-
-## Data Models
-
-### Collections in MongoDB:
-- **customers**: User profiles and authentication data
-- **user_sessions**: Session tokens with expiry
-- **banners**: Home page promotional banners
-- **brands**: Brand details with PDP information
-- **categories**: Deal categories
-- **coupons**: User-specific coupons with city and expiry
-- **payments**: Payment transactions
-- **admins**: Admin user management
-
-## Coupon System Features
-
-### Coupon Creation Rules:
-- ✅ One active coupon per user per brand
-- ✅ City-based coupon generation
-- ✅ Configurable expiry (default 30 days)
-- ✅ Unique coupon codes (BC + 8 chars)
-
-### Coupon Redemption Rules:
-- ✅ One-time redemption only
-- ✅ Expiry date validation
-- ✅ User ownership validation
-- ✅ Redemption timestamp tracking
-
-## Production Checklist
-
-- ✅ Authentication & Session Management
-- ✅ Deals & Coupon System
-- ✅ Payment Integration
-- ✅ Input validation & Error handling
-- ✅ MongoDB indexing
-- ✅ Health checks & Monitoring
-- ✅ Environment-based configuration
+For support and questions, please contact the development team.

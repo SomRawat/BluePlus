@@ -7,6 +7,7 @@ public class HomePageResponse {
     private List<PopularBrandDto> popularBrands;
     private List<HandpickedDealDto> handpickedDeals;
     private List<CategoryDto> categories;
+    private boolean isActive = true;
     
     public HomePageResponse() {}
     
@@ -22,6 +23,9 @@ public class HomePageResponse {
     
     public List<CategoryDto> getCategories() { return categories; }
     public void setCategories(List<CategoryDto> categories) { this.categories = categories; }
+    
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
     
     public static class BannerDto {
         private String id;
