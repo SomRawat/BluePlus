@@ -19,7 +19,7 @@ public class PDP {
     private String brandName;
     private String bannerLink;
     private String brandDescription;
-    private String discountText;
+    private String couponCode;
     private String validTill;
     private List<String> howItWorksBullets = new ArrayList<>();
     private List<String> benefits = new ArrayList<>();
@@ -52,7 +52,7 @@ public class PDP {
     @Data
     @NoArgsConstructor
     public static class CouponInfo {
-        private String discountText;
+        private String couponCode;
         private boolean available;
         private int remainingCount;
     }
@@ -64,7 +64,7 @@ public class PDP {
         this.brandName = data.getBrandName();
         this.bannerLink = data.getBannerLink();
         this.brandDescription = data.getBrandDescription();
-        this.discountText = data.getDiscountText();
+        this.couponCode = data.getCouponCode();
         this.validTill = data.getValidTill();
         this.howItWorksBullets = data.getHowItWorksBullets();
         this.benefits = data.getBenefits();

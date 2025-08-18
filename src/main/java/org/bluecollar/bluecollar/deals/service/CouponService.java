@@ -149,7 +149,7 @@ public class CouponService {
         if (remaining > 0) {
             response.setCanGenerate(true);
             response.setMessage(remaining + " coupons left");
-            response.setDisplayText("Get " + campaign.getDiscountText());
+            response.setDisplayText("Get " + campaign.getCouponCode());
             response.setButtonText("Generate Coupon");
             response.setButtonAction("GENERATE");
             response.setShowButton(true);
@@ -186,7 +186,7 @@ public class CouponService {
         CouponCampaign campaign = new CouponCampaign();
         campaign.setCampaignName(request.getCampaignName());
         campaign.setBrandId(request.getBrandId());
-        campaign.setDiscountText(request.getDiscountText());
+        campaign.setCouponCode(request.getCouponCode());
         campaign.setTotalLimit(request.getTotalLimit());
         campaign.setExpiresAt(LocalDateTime.now().plusDays(request.getExpiryDays() > 0 ? request.getExpiryDays() : 30));
         campaign.setActive(request.isActive());
@@ -196,7 +196,7 @@ public class CouponService {
         // Update PDP with coupon info
         pdp.setActiveCampaignId(campaign.getId());
         PDP.CouponInfo couponInfo = new PDP.CouponInfo();
-        couponInfo.setDiscountText(campaign.getDiscountText());
+        couponInfo.setCouponCode(campaign.getCouponCode());
         couponInfo.setAvailable(true);
         couponInfo.setRemainingCount(campaign.getTotalLimit());
         pdp.setCouponInfo(couponInfo);
@@ -212,7 +212,7 @@ public class CouponService {
                     result.put("id", campaign.getId());
                     result.put("campaignName", campaign.getCampaignName());
                     result.put("brandId", campaign.getBrandId());
-                    result.put("discountText", campaign.getDiscountText());
+                    result.put("couponCode", campaign.getCouponCode());
                     result.put("totalLimit", campaign.getTotalLimit());
                     result.put("usedCount", couponRepository.countByCampaignIdAndRedeemedTrue(campaign.getId()));
                     result.put("remaining", campaign.getTotalLimit() - couponRepository.countByCampaignIdAndRedeemedTrue(campaign.getId()));
@@ -242,7 +242,7 @@ public class CouponService {
         response.setExpired(expired);
         response.setExpiryText("Expires: " + coupon.getExpiresAt().toLocalDate());
         
-        String discountText = campaign != null ? campaign.getDiscountText() : "Discount";
+        String couponCodeText = campaign != null ? campaign.getCouponCode() : "Discount";
         
         if (coupon.isRedeemed()) {
             response.setStatus("REDEEMED");
@@ -266,7 +266,7 @@ public class CouponService {
             response.setStatus("ACTIVE");
             response.setCanGenerate(false);
             response.setMessage("Active coupon ready to use");
-            response.setDisplayText(discountText + " - Code: " + coupon.getCouponCode());
+            response.setDisplayText(couponCodeText + " - Code: " + coupon.getCouponCode());
             response.setButtonText("Use Coupon");
             response.setButtonAction("REDEEM");
             response.setShowButton(true);

@@ -19,7 +19,7 @@ public class CouponCampaign {
     @Indexed
     private String brandId;
     
-    private String discountText;
+    private String couponCode;
     private int totalLimit;
     private int usedCount = 0;
     private LocalDateTime expiresAt;

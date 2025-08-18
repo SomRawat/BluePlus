@@ -13,7 +13,7 @@ public class PDPData {
     private String brandName;
     private String bannerLink;
     private String brandDescription;
-    private String discountText;
+    private String couponCode;
     private String validTill;
     private List<String> howItWorksBullets = new ArrayList<>();
     private List<String> benefits = new ArrayList<>();
