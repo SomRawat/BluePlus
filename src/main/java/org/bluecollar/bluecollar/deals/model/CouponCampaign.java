@@ -9,20 +9,20 @@ import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "coupons")
-public class Coupon {
+@Document(collection = "coupon_campaigns")
+public class CouponCampaign {
     @Id
     private String id;
     
-    @Indexed
-    private String customerId;
+    private String campaignName;
     
     @Indexed
-    private String campaignId;
+    private String brandId;
     
     private String couponCode;
+    private int totalLimit;
+    private int usedCount = 0;
     private LocalDateTime expiresAt;
-    private boolean redeemed = false;
-    private LocalDateTime redeemedAt;
+    private boolean isActive = true;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

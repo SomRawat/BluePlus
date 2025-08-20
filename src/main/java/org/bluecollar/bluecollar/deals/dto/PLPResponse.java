@@ -1,8 +1,12 @@
 package org.bluecollar.bluecollar.deals.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.bluecollar.bluecollar.deals.model.PLP;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
 public class PLPResponse {
     private String categoryId;
     private String title;
@@ -10,8 +14,6 @@ public class PLPResponse {
     private String activeTab;
     private List<PLP.OfferItem> offers;
     private boolean active;
-
-    public PLPResponse() {}
 
     public PLPResponse(String categoryId, PLPData data, boolean active) {
         this.categoryId = categoryId;
@@ -24,17 +26,4 @@ public class PLPResponse {
             null;
         this.active = active;
     }
-
-    public String getCategoryId() { return categoryId; }
-    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public List<String> getTabs() { return tabs; }
-    public void setTabs(List<String> tabs) { this.tabs = tabs; }
-    public String getActiveTab() { return activeTab; }
-    public void setActiveTab(String activeTab) { this.activeTab = activeTab; }
-    public List<PLP.OfferItem> getOffers() { return offers; }
-    public void setOffers(List<PLP.OfferItem> offers) { this.offers = offers; }
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
 }

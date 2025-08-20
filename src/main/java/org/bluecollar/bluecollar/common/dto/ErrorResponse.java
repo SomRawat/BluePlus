@@ -1,7 +1,9 @@
 package org.bluecollar.bluecollar.common.dto;
 
+import lombok.Data;
 import java.time.LocalDateTime;
 
+@Data
 public class ErrorResponse {
     private final int statusCode;
     private final String message;
@@ -11,13 +13,5 @@ public class ErrorResponse {
         this.statusCode = statusCode;
         this.message = message;
         this.timestamp = LocalDateTime.now();
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public String getMessage() {
-        return message;
     }
 }

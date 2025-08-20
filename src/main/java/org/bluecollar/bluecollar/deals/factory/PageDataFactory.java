@@ -58,7 +58,7 @@ public class PageDataFactory {
             data.setBrandName(pdp.getBrandName());
             data.setBannerLink(pdp.getBannerLink());
             data.setBrandDescription(pdp.getBrandDescription());
-            data.setDiscountText(pdp.getDiscountText());
+            data.setCouponCode(pdp.getCouponCode());
             data.setValidTill(pdp.getValidTill());
             data.setHowItWorksBullets(pdp.getHowItWorksBullets());
             data.setBenefits(pdp.getBenefits());
