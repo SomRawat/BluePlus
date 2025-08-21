@@ -13,30 +13,11 @@ public class DealsController {
     
     @Autowired
     private DealsService dealsService;
-    @Autowired
-    private CouponRepository couponRepository;
     
     @GetMapping("/home")
     public BlueCollarApiResponse<HomePageResponse> getHomePage() {
         try {
             HomePageResponse response = dealsService.getHomePage();
-            return new BlueCollarApiResponse<>(response, 200);
-        } catch (Exception e) {
-            return new BlueCollarApiResponse<>(null, 400);
-        }
-    }
-    
-    @GetMapping("/brand/{brandId}")
-    public BlueCollarApiResponse<BrandDetailsResponse> getBrandDetails(@PathVariable String brandId,
-                                                                       @RequestHeader(value = "Session-Token", required = false) String sessionToken,
-                                                                       @RequestHeader(value = "Customer-Id", required = false) String customerId) {
-        try {
-            BrandDetailsResponse response = dealsService.getBrandDetails(brandId);
-            // If customerId provided, set redeemed flag based on coupons
-            if (customerId != null && !customerId.isEmpty()) {
-                boolean redeemed = couponRepository.findByCustomerIdAndBrandIdAndRedeemedTrue(customerId, brandId).isPresent();
-                response.setRedeemed(redeemed);
-            }
             return new BlueCollarApiResponse<>(response, 200);
         } catch (Exception e) {
             return new BlueCollarApiResponse<>(null, 400);
