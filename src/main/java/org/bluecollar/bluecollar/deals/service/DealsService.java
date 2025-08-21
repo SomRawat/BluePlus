@@ -343,9 +343,25 @@ public class DealsService {
         
         // Create new PDP
         generateIdsForPDPData(pdpData);
-        PDP pdp = new PDP(null, pdpData, true); // null brandId, let MongoDB generate ID
+        PDP pdp = new PDP(
+            null, // brandId
+            pdpData.getCategoryId(),
+            pdpData.getBrandName(),
+            pdpData.getBannerLink(),
+            pdpData.getBrandDescription(),
+            pdpData.getDiscountText(),
+            pdpData.getValidTill(),
+            pdpData.getHowItWorksBullets(),
+            pdpData.getBenefits(),
+            pdpData.getHowToRedeemBullets(),
+            pdpData.getTermsAndConditions(),
+            pdpData.getFaq() != null ? pdpData.getFaq().stream().map(PDP.FAQItem::new).collect(Collectors.toList()) : new ArrayList<>(),
+            pdpData.getRedeemLink(),
+            pdpData.isRedeemed(),
+            pdpData.isActive(),
+            null // CouponCampaign, pass null or adjust if needed
+        );
         PDP savedPdp = pdpRepository.save(pdp);
-        
         return convertPDPToBrandDetailsResponse(savedPdp);
     }
     
