@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface CouponRepository extends MongoRepository<Coupon, String> {
-    Optional<Coupon> findByCustomerIdAndBrandIdAndRedeemedTrue(String customerId, String brandId);
+
 }
