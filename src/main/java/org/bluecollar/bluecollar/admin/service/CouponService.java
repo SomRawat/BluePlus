@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.chrono.ChronoLocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -26,10 +24,13 @@ public class CouponService {
         this.couponRepository = couponRepository;
     }
 
-    public String createCouponCampaign(CouponRequest request) {
+    // Create or Update coupon campaign based on presence of couponId / id
+    public String upsertCouponCampaign(CouponRequest request) {
         Objects.requireNonNull(request, "request must not be null");
 
-        // Basic validations
+        String effectiveCouponId = StringUtils.hasText(request.getCouponId()) ? request.getCouponId() : request.getId();
+        boolean isUpdate = StringUtils.hasText(effectiveCouponId);
+
         if (!StringUtils.hasText(request.getBrandId())) {
             throw new IllegalArgumentException("brandId (PDP id) is required");
         }
@@ -39,24 +40,37 @@ public class CouponService {
         if (request.getTotalLimit() <= 0) {
             throw new IllegalArgumentException("totalLimit must be > 0");
         }
+        if (request.getExpiryDays() == null || request.getExpiryDays() <= 0) {
+            throw new IllegalArgumentException("expiryDays must be provided and > 0");
+        }
 
-        // Compute/validate expiry
+        // Always compute expiryDate from expiryDays
+        Instant target = Instant.now().plus(request.getExpiryDays().longValue(), ChronoUnit.DAYS);
+        request.setExpiryDate(new DateTime(target.toEpochMilli()));
+
         Instant now = Instant.now();
-        Instant expiresAt = null;
 
         // Load PDP
         PDP pdp = pdpRepository.findById(request.getBrandId())
                 .orElseThrow(() -> new IllegalArgumentException("PDP page not found for id: " + request.getBrandId()));
 
-        // Enforce single embedded campaign per PDP
-        if (pdp.getCampaign() != null) {
-            throw new IllegalStateException("PDP already has a campaign. Use an update/replace endpoint if intended.");
+        // Prepare or update embedded campaign in PDP
+        PDP.CouponCampaign campaign = pdp.getCampaign();
+        if (isUpdate) {
+            if (campaign == null) {
+                campaign = new PDP.CouponCampaign();
+                campaign.setId(UUID.randomUUID().toString());
+                campaign.setCreatedAt(now);
+            }
+        } else {
+            if (campaign != null) {
+                throw new IllegalStateException("PDP already has a campaign. Use update with couponId to modify.");
+            }
+            campaign = new PDP.CouponCampaign();
+            campaign.setId(UUID.randomUUID().toString());
+            campaign.setCreatedAt(now);
         }
 
-        // Prepare campaign
-        PDP.CouponCampaign campaign = new PDP.CouponCampaign();
-        String campaignId = UUID.randomUUID().toString();
-        campaign.setId(campaignId);
         campaign.setCampaignName(request.getCampaignName().trim());
         campaign.setCity(StringUtils.hasText(request.getCity()) ? request.getCity().trim() : null);
 
@@ -64,51 +78,93 @@ public class CouponService {
         String code = StringUtils.hasText(request.getCouponCode())
                 ? sanitizeCode(request.getCouponCode())
                 : generateCouponCode(pdp.getBrandName());
+        // If creating OR code changed, ensure uniqueness
+        if (!isUpdate || (pdp.getCampaign() == null || !code.equalsIgnoreCase(pdp.getCampaign().getCouponCode()))) {
+            if (pdpRepository.existsByCampaign_CouponCodeIgnoreCase(code)) {
+                throw new IllegalArgumentException("couponCode already exists: " + code);
+            }
+        }
         campaign.setCouponCode(code);
 
-        if (pdpRepository.existsByCampaign_CouponCodeIgnoreCase(code)) {
-            throw new IllegalArgumentException("couponCode already exists: " + code);
-        }
-
         campaign.setTotalLimit(request.getTotalLimit());
-
-        boolean active = request.getActive() == null || request.getActive();
-        campaign.setActive(active);
-
-        campaign.setCreatedAt(now);
-        campaign.setExpiresAt(expiresAt);
+        campaign.setActive(request.getActive() == null || request.getActive());
+        campaign.setExpiryDays(request.getExpiryDays());
+        campaign.setExpiresAt(Instant.ofEpochMilli(request.getExpiryDate().getValue()));
 
         // Attach to PDP and save
         pdp.setCampaign(campaign);
         pdpRepository.save(pdp);
 
-
-        // Build and persist the Coupon document
-        Coupon coupon = new Coupon();
-        coupon.setId(UUID.randomUUID().toString());
+        // Build or update the Coupon document
+        Coupon coupon;
+        if (isUpdate) {
+            coupon = couponRepository.findById(effectiveCouponId)
+                    .orElseThrow(() -> new IllegalArgumentException("campaign not found: " + effectiveCouponId));
+        } else {
+            coupon = new Coupon();
+            coupon.setId(UUID.randomUUID().toString());
+            coupon.setCreatedAt(now);
+        }
         coupon.setBrandId(request.getBrandId());
         coupon.setCampaignName(request.getCampaignName().trim());
         coupon.setCity(StringUtils.hasText(request.getCity()) ? request.getCity().trim() : null);
         coupon.setCouponCode(code);
         coupon.setTotalLimit(request.getTotalLimit());
-        coupon.setActive(request.getActive() == null ? true : request.getActive());
-        coupon.setCreatedAt(now);
+        coupon.setActive(request.getActive() == null ? Boolean.TRUE : request.getActive());
         coupon.setExpiresAt(request.getExpiryDate());
 
         couponRepository.save(coupon);
 
+        return campaign.getId();
+    }
 
-        return campaignId;
+    // Return all campaigns as DTOs
+    public List<CouponRequest> getAllCampaigns() {
+        List<Coupon> coupons = couponRepository.findAll();
+        List<CouponRequest> result = new ArrayList<>(coupons.size());
+        for (Coupon c : coupons) {
+            CouponRequest dto = new CouponRequest();
+            dto.setId(c.getId()); // Include MongoDB ID
+            dto.setActive(c.getActive());
+            dto.setCampaignName(c.getCampaignName());
+            dto.setBrandId(c.getBrandId());
+            dto.setCity(c.getCity());
+            dto.setCouponCode(c.getCouponCode());
+            dto.setTotalLimit(c.getTotalLimit());
+            dto.setExpiryDate(c.getExpiresAt());
+            result.add(dto);
+        }
+        return result;
+    }
+
+    // Delete from coupon table and optionally remove from PDP also
+    public void deleteCampaign(String campaignId, boolean deleteFromPdpAlso) {
+        if (!StringUtils.hasText(campaignId)) {
+            throw new IllegalArgumentException("campaignId is required");
+        }
+        Coupon coupon = couponRepository.findById(campaignId)
+                .orElseThrow(() -> new IllegalArgumentException("campaign not found: " + campaignId));
+
+        // Remove coupon document first
+        couponRepository.deleteById(campaignId);
+
+        if (deleteFromPdpAlso) {
+            // Clear embedded campaign from PDP for the brand
+            pdpRepository.findById(coupon.getBrandId()).ifPresent(pdp -> {
+                if (pdp.getCampaign() != null) {
+                    pdp.setCampaign(null);
+                    pdpRepository.save(pdp);
+                }
+            });
+        }
     }
 
     // Helpers
-
     private String sanitizeCode(String code) {
         return code.trim().replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
     }
 
     private String generateCouponCode(String brandName) {
-        // brand prefix + 6 random alphanumerics
         String prefix = "";
         if (StringUtils.hasText(brandName)) {
             prefix = brandName.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
@@ -129,35 +185,4 @@ public class CouponService {
         }
         return sb.toString();
     }
-
-    // Return all campaigns as DTOs
-    public List<CouponRequest> getAllCampaigns() {
-        List<Coupon> coupons = couponRepository.findAll();
-        List<CouponRequest> result = new ArrayList<>(coupons.size());
-        for (Coupon c : coupons) {
-            CouponRequest dto = new CouponRequest();
-            dto.setId(c.getId()); // Include MongoDB ID
-            dto.setActive(c.getActive());
-            dto.setCampaignName(c.getCampaignName());
-            dto.setBrandId(c.getBrandId());
-            dto.setCity(c.getCity());
-            dto.setCouponCode(c.getCouponCode());
-            dto.setTotalLimit(c.getTotalLimit());
-            dto.setExpiryDate(c.getExpiresAt()); // map document expiresAt -> DTO expiryDays
-            result.add(dto);
-        }
-        return result;
-    }
-
-    // Delete a campaign by its coupon document id
-    public void deleteCampaign(String campaignId) {
-        if (!StringUtils.hasText(campaignId)) {
-            throw new IllegalArgumentException("campaignId is required");
-        }
-        if (!couponRepository.existsById(campaignId)) {
-            throw new IllegalArgumentException("campaign not found: " + campaignId);
-        }
-        couponRepository.deleteById(campaignId);
-    }
-
 }

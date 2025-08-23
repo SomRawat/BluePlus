@@ -27,8 +27,8 @@ public class AdminCouponController {
             @RequestBody CouponRequest request,
             @RequestHeader("Admin-Session-Token") String sessionToken) {
         adminSessionService.validateSession(sessionToken);
-        String campaignId = couponService.createCouponCampaign(request);
-        return new BlueCollarApiResponse<>("Campaign created with ID: " + campaignId, 200);
+        String campaignId = couponService.upsertCouponCampaign(request);
+        return new BlueCollarApiResponse<>("Campaign processed with ID: " + campaignId, 200);
     }
 
     @GetMapping("/campaigns")
@@ -39,12 +39,14 @@ public class AdminCouponController {
         return new BlueCollarApiResponse<>(campaigns, 200);
     }
 
+    // deletefromPdpAlso flag controls whether to remove embedded campaign from PDP as well
     @DeleteMapping("/campaign/{campaignId}")
     public BlueCollarApiResponse<String> deleteCampaign(
             @PathVariable String campaignId,
+            @RequestParam(name = "deletefromPdpAlso", defaultValue = "true") boolean deletefromPdpAlso,
             @RequestHeader("Admin-Session-Token") String sessionToken) {
         adminSessionService.validateSession(sessionToken);
-        couponService.deleteCampaign(campaignId);
+        couponService.deleteCampaign(campaignId, deletefromPdpAlso);
         return new BlueCollarApiResponse<>("Campaign deleted successfully", 200);
     }
 }
