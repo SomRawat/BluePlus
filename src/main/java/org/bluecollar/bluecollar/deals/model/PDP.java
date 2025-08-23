@@ -228,15 +228,15 @@ public class PDP {
         private int totalLimit;
         private int expiryDays;
         private boolean active = true;
-        private Instant createdAt;
-        private Instant expiresAt;
+        private java.util.Date createdAt;
+        private java.util.Date expiresAt;
         private Integer remaining;
         private String city;
 
         public CouponCampaign() {
         }
 
-        public CouponCampaign(String id, String campaignName, String couponCode, int totalLimit, int expiryDays, boolean active, Instant createdAt, Instant expiresAt, Integer remaining, String city) {
+        public CouponCampaign(String id, String campaignName, String couponCode, int totalLimit, int expiryDays, boolean active, java.util.Date createdAt, java.util.Date expiresAt, Integer remaining, String city) {
             this.id = id;
             this.campaignName = campaignName;
             this.couponCode = couponCode;
@@ -297,19 +297,19 @@ public class PDP {
             this.active = active;
         }
 
-        public Instant getCreatedAt() {
+        public java.util.Date getCreatedAt() {
             return createdAt;
         }
 
-        public void setCreatedAt(Instant createdAt) {
+        public void setCreatedAt(java.util.Date createdAt) {
             this.createdAt = createdAt;
         }
 
-        public Instant getExpiresAt() {
+        public java.util.Date getExpiresAt() {
             return expiresAt;
         }
 
-        public void setExpiresAt(Instant expiresAt) {
+        public void setExpiresAt(java.util.Date expiresAt) {
             this.expiresAt = expiresAt;
         }
 

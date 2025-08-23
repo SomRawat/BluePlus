@@ -65,7 +65,7 @@ public class CouponService {
             if (campaign == null) {
                 campaign = new PDP.CouponCampaign();
                 campaign.setId(UUID.randomUUID().toString());
-                campaign.setCreatedAt(now);
+                campaign.setCreatedAt(new java.util.Date());
             }
         } else {
             // If PDP already has a campaign and UI didn't pass couponId, treat as update instead of error
@@ -74,7 +74,7 @@ public class CouponService {
             } else {
                 campaign = new PDP.CouponCampaign();
                 campaign.setId(UUID.randomUUID().toString());
-                campaign.setCreatedAt(now);
+                campaign.setCreatedAt(new java.util.Date());
             }
         }
 
@@ -99,7 +99,7 @@ public class CouponService {
         campaign.setTotalLimit(request.getTotalLimit());
         campaign.setActive(request.getActive() == null || request.getActive());
         campaign.setExpiryDays(request.getExpiryDays());
-        campaign.setExpiresAt(Instant.ofEpochMilli(request.getExpiryDate().getValue()));
+        campaign.setExpiresAt(new java.util.Date(request.getExpiryDate().getValue()));
 
         // Attach to PDP and save
         pdp.setCampaign(campaign);
@@ -117,14 +117,14 @@ public class CouponService {
                         .orElseGet(() -> {
                             Coupon c = new Coupon();
                             c.setId(UUID.randomUUID().toString());
-                            c.setCreatedAt(now);
+                            c.setCreatedAt(new java.util.Date());
                             return c;
                         });
             }
         } else {
             coupon = new Coupon();
             coupon.setId(UUID.randomUUID().toString());
-            coupon.setCreatedAt(now);
+            coupon.setCreatedAt(new java.util.Date());
         }
         coupon.setBrandId(request.getBrandId());
         coupon.setCampaignName(request.getCampaignName().trim());
@@ -132,7 +132,7 @@ public class CouponService {
         coupon.setCouponCode(code);
         coupon.setTotalLimit(request.getTotalLimit());
         coupon.setActive(request.getActive() == null ? Boolean.TRUE : request.getActive());
-        coupon.setExpiresAt(Instant.ofEpochMilli(request.getExpiryDate().getValue()));
+        coupon.setExpiresAt(new java.util.Date(request.getExpiryDate().getValue()));
 
         couponRepository.save(coupon);
 
@@ -154,9 +154,9 @@ public class CouponService {
             dto.setTotalLimit(c.getTotalLimit());
             if (c.getExpiresAt() != null) {
                 Instant now = Instant.now();
-                long days = ChronoUnit.DAYS.between(now.truncatedTo(ChronoUnit.DAYS), c.getExpiresAt());
+                long days = ChronoUnit.DAYS.between(now.truncatedTo(ChronoUnit.DAYS), c.getExpiresAt().toInstant());
                 dto.setExpiryDays((int) Math.max(days, 0));
-                dto.setExpiryDate(new DateTime(c.getExpiresAt().toEpochMilli()));
+                dto.setExpiryDate(new DateTime(c.getExpiresAt().getTime()));
             }
             result.add(dto);
         }
