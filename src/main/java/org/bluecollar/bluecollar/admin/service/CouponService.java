@@ -1,6 +1,5 @@
 package org.bluecollar.bluecollar.admin.service;
 
-import com.google.api.client.util.DateTime;
 import org.bluecollar.bluecollar.deals.dto.CouponRequest;
 import org.bluecollar.bluecollar.deals.model.Coupon;
 import org.bluecollar.bluecollar.deals.model.PDP;
@@ -13,6 +12,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 @Service
 public class CouponService {
@@ -49,7 +50,8 @@ public class CouponService {
                 .plusDays(request.getExpiryDays().longValue())
                 .atTime(23, 59, 59)
                 .toInstant(ZoneOffset.UTC);
-        request.setExpiryDate(new DateTime(target.toEpochMilli()));
+        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+        request.setExpiryDate(df.format(Date.from(target)));
 
         // Load PDP
         PDP pdp = pdpRepository.findById(request.getBrandId())
@@ -95,7 +97,12 @@ public class CouponService {
         campaign.setNoOfCoupons(request.getNoOfCoupons());
         campaign.setActive(!Boolean.FALSE.equals(request.getActive()));
         campaign.setExpiryDays(request.getExpiryDays());
-        campaign.setExpiresAt(Date.from(Instant.now().plusMillis(request.getExpiryDate().getValue())));
+
+        Instant expiryInstant = LocalDate.now(ZoneOffset.UTC)
+                .plusDays(request.getExpiryDays().longValue())
+                .atTime(23, 59, 59)
+                .toInstant(ZoneOffset.UTC);
+        campaign.setExpiresAt(Date.from(expiryInstant));
 
         // Attach to PDP and save
         pdp.setCampaign(campaign);
@@ -128,7 +135,7 @@ public class CouponService {
         coupon.setCouponCode(code);
         coupon.setNoOfCoupons(request.getNoOfCoupons());
         coupon.setActive(Boolean.TRUE.equals(request.getActive()) || request.getActive() == null);
-        coupon.setExpiresAt(Date.from(Instant.now().plusMillis(request.getExpiryDate().getValue())));
+        coupon.setExpiresAt(Date.from(expiryInstant));
 
         couponRepository.save(coupon);
 
@@ -142,6 +149,7 @@ public class CouponService {
             return Collections.emptyList();
         }
         List<CouponRequest> result = new ArrayList<>(coupons.size());
+        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
         for (Coupon c : coupons) {
             CouponRequest dto = new CouponRequest();
             dto.setId(c.getId()); // Include MongoDB ID
@@ -151,7 +159,7 @@ public class CouponService {
             dto.setCity(c.getCity());
             dto.setCouponCode(c.getCouponCode());
             dto.setNoOfCoupons(c.getNoOfCoupons());
-            dto.setExpiryDate(new DateTime(c.getExpiresAt().getTime()));
+            dto.setExpiryDate(c.getExpiresAt() != null ? df.format(c.getExpiresAt()) : null);
             result.add(dto);
         }
         return result;

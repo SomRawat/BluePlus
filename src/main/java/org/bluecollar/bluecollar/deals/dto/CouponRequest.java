@@ -1,6 +1,6 @@
 package org.bluecollar.bluecollar.deals.dto;
 
-import com.google.api.client.util.DateTime;
+
 
 public class CouponRequest {
     private String couponId;
@@ -12,13 +12,13 @@ public class CouponRequest {
     private String couponCode;
     private int noOfCoupons;
     private Integer expiryDays;
-    private DateTime expiryDate;
+    private String expiryDate;
 
     public CouponRequest() {
     }
 
     public CouponRequest(String id, Boolean active, String campaignName, String brandId, String city,
-                         String couponCode, int noOfCoupons, DateTime expiryDate) {
+                         String couponCode, int noOfCoupons, String expiryDate) {
         this.id = id;
         this.active = active;
         this.campaignName = campaignName;
@@ -101,11 +101,11 @@ public class CouponRequest {
         this.expiryDays = expiryDays;
     }
 
-    public DateTime getExpiryDate() {
+    public String getExpiryDate() {
         return expiryDate;
     }
 
-    public void setExpiryDate(DateTime expiryDate) {
+    public void setExpiryDate(String expiryDate) {
         this.expiryDate = expiryDate;
     }
 }
