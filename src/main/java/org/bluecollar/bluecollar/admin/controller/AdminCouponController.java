@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping("/api/admin/deals")
+@RequestMapping("/api/admin/coupon")
 @RestController()
 public class AdminCouponController {
 
