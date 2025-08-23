@@ -2,9 +2,8 @@ package org.bluecollar.bluecollar.deals.dto;
 
 import com.google.api.client.util.DateTime;
 
-import java.time.LocalDateTime;
-
 public class CouponRequest {
+    private String id;
     private Boolean active = Boolean.TRUE;
     private String campaignName;
     private String brandId;
@@ -13,10 +12,13 @@ public class CouponRequest {
     private int totalLimit;
     private DateTime expiryDate;
 
-    public CouponRequest() {}
 
-    public CouponRequest(Boolean active, String campaignName, String brandId, String city,
+    public CouponRequest() {
+    }
+
+    public CouponRequest(String id, Boolean active, String campaignName, String brandId, String city,
                          String couponCode, int totalLimit, DateTime expiryDate) {
+        this.id = id;
         this.active = active;
         this.campaignName = campaignName;
         this.brandId = brandId;
@@ -24,6 +26,14 @@ public class CouponRequest {
         this.couponCode = couponCode;
         this.totalLimit = totalLimit;
         this.expiryDate = expiryDate;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Boolean getActive() {

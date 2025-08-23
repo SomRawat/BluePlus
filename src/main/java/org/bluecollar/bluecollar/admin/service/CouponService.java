@@ -136,6 +136,7 @@ public class CouponService {
         List<CouponRequest> result = new ArrayList<>(coupons.size());
         for (Coupon c : coupons) {
             CouponRequest dto = new CouponRequest();
+            dto.setId(c.getId()); // Include MongoDB ID
             dto.setActive(c.getActive());
             dto.setCampaignName(c.getCampaignName());
             dto.setBrandId(c.getBrandId());
