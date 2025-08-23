@@ -111,7 +111,7 @@ public class CouponService {
         coupon.setCouponCode(code);
         coupon.setTotalLimit(request.getTotalLimit());
         coupon.setActive(request.getActive() == null ? Boolean.TRUE : request.getActive());
-        coupon.setExpiresAt(request.getExpiryDate());
+        coupon.setExpiresAt(Instant.ofEpochMilli(request.getExpiryDate().getValue()));
 
         couponRepository.save(coupon);
 
@@ -131,7 +131,7 @@ public class CouponService {
             dto.setCity(c.getCity());
             dto.setCouponCode(c.getCouponCode());
             dto.setTotalLimit(c.getTotalLimit());
-            dto.setExpiryDate(c.getExpiresAt());
+            dto.setExpiryDate(c.getExpiresAt() == null ? null : new DateTime(c.getExpiresAt().toEpochMilli()));
             result.add(dto);
         }
         return result;

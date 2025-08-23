@@ -1,6 +1,5 @@
 package org.bluecollar.bluecollar.deals.model;
 
-import com.google.api.client.util.DateTime;
 import org.springframework.data.annotation.Id;
 import java.time.Instant;
 
@@ -14,13 +13,13 @@ public class Coupon {
     private int totalLimit;
     private Boolean active;
     private Instant createdAt;
-    private DateTime expiresAt;
+    private Instant expiresAt;
 
     public Coupon() {}
 
     public Coupon(String id, String campaignName, String brandId, String city,
                   String couponCode, int totalLimit, Boolean active,
-                  Instant createdAt, DateTime expiresAt) {
+                  Instant createdAt, Instant expiresAt) {
         this.id = id;
         this.campaignName = campaignName;
         this.brandId = brandId;
@@ -96,11 +95,11 @@ public class Coupon {
         this.createdAt = createdAt;
     }
 
-    public DateTime getExpiresAt() {
+    public Instant getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(DateTime expiresAt) {
+    public void setExpiresAt(Instant expiresAt) {
         this.expiresAt = expiresAt;
     }
 }
