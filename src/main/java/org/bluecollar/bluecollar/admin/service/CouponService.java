@@ -53,8 +53,6 @@ public class CouponService {
                 .toInstant(ZoneOffset.UTC);
         request.setExpiryDate(new DateTime(target.toEpochMilli()));
 
-        Instant now = Instant.now();
-
         // Load PDP
         PDP pdp = pdpRepository.findById(request.getBrandId())
                 .orElseThrow(() -> new IllegalArgumentException("PDP page not found for id: " + request.getBrandId()));
@@ -89,7 +87,7 @@ public class CouponService {
         boolean codeChangedOrCreate = (!isUpdate) || (pdp.getCampaign() == null || !code.equalsIgnoreCase(pdp.getCampaign().getCouponCode()));
         if (codeChangedOrCreate && pdpRepository.existsByCampaign_CouponCodeIgnoreCase(code)) {
             // Allow same code if belongs to this brand+same coupon document
-            Optional<Coupon> existingSameBrand = couponRepository.findByBrandIdAndCouponCodeIgnoreCase(request.getBrandId(), code);
+            Optional<Coupon> existingSameBrand = couponRepository.findByIdAndCouponCodeIgnoreCase(request.getBrandId(), code);
             if (existingSameBrand.isEmpty() || (isUpdate && !existingSameBrand.get().getId().equals(effectiveCouponId))) {
                 throw new IllegalArgumentException("couponCode already exists: " + code);
             }
@@ -113,7 +111,7 @@ public class CouponService {
                         .orElseThrow(() -> new IllegalArgumentException("campaign not found: " + effectiveCouponId));
             } else {
                 // No couponId passed but PDP had a campaign: update the brand's existing coupon if present
-                coupon = couponRepository.findFirstByBrandId(request.getBrandId())
+                coupon = couponRepository.findFirstById(request.getBrandId())
                         .orElseGet(() -> {
                             Coupon c = new Coupon();
                             c.setId(UUID.randomUUID().toString());
