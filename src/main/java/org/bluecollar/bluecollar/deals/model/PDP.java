@@ -225,7 +225,7 @@ public class PDP {
         private String id;
         private String campaignName;
         private String couponCode;
-        private int totalLimit;
+        private int noOfCoupons;
         private int expiryDays;
         private boolean active = true;
         private java.util.Date createdAt;
@@ -236,11 +236,11 @@ public class PDP {
         public CouponCampaign() {
         }
 
-        public CouponCampaign(String id, String campaignName, String couponCode, int totalLimit, int expiryDays, boolean active, java.util.Date createdAt, java.util.Date expiresAt, Integer remaining, String city) {
+        public CouponCampaign(String id, String campaignName, String couponCode, int noOfCoupons, int expiryDays, boolean active, java.util.Date createdAt, java.util.Date expiresAt, Integer remaining, String city) {
             this.id = id;
             this.campaignName = campaignName;
             this.couponCode = couponCode;
-            this.totalLimit = totalLimit;
+            this.noOfCoupons = noOfCoupons;
             this.expiryDays = expiryDays;
             this.active = active;
             this.createdAt = createdAt;
@@ -273,12 +273,12 @@ public class PDP {
             this.couponCode = couponCode;
         }
 
-        public int getTotalLimit() {
-            return totalLimit;
+        public int getNoOfCoupons() {
+            return noOfCoupons;
         }
 
-        public void setTotalLimit(int totalLimit) {
-            this.totalLimit = totalLimit;
+        public void setNoOfCoupons(int noOfCoupons) {
+            this.noOfCoupons = noOfCoupons;
         }
 
         public int getExpiryDays() {

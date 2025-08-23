@@ -10,7 +10,7 @@ public class Coupon {
     private String brandId;
     private String city;
     private String couponCode;
-    private int totalLimit;
+    private int noOfCoupons;
     private Boolean active;
     private Date createdAt;
     private Date expiresAt;
@@ -18,14 +18,14 @@ public class Coupon {
     public Coupon() {}
 
     public Coupon(String id, String campaignName, String brandId, String city,
-                  String couponCode, int totalLimit, Boolean active,
+                  String couponCode, int noOfCoupons, Boolean active,
                   Date createdAt, Date expiresAt) {
         this.id = id;
         this.campaignName = campaignName;
         this.brandId = brandId;
         this.city = city;
         this.couponCode = couponCode;
-        this.totalLimit = totalLimit;
+        this.noOfCoupons = noOfCoupons;
         this.active = active;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
@@ -71,12 +71,12 @@ public class Coupon {
         this.couponCode = couponCode;
     }
 
-    public int getTotalLimit() {
-        return totalLimit;
+    public int getNoOfCoupons() {
+        return noOfCoupons;
     }
 
-    public void setTotalLimit(int totalLimit) {
-        this.totalLimit = totalLimit;
+    public void setNoOfCoupons(int noOfCoupons) {
+        this.noOfCoupons = noOfCoupons;
     }
 
     public Boolean getActive() {

@@ -3,34 +3,29 @@ package org.bluecollar.bluecollar.deals.dto;
 import com.google.api.client.util.DateTime;
 
 public class CouponRequest {
-    // When present, treat as update. If null, create new
-    private String couponId; // optional explicit key for updates
-
-    // Existing fields
-    private String id; // kept for backward compatibility, may also be used as update key
+    private String couponId;
+    private String id;
     private Boolean active = Boolean.TRUE;
     private String campaignName;
     private String brandId;
     private String city;
     private String couponCode;
-    private int totalLimit;
-
-    // Either provide expiryDays (preferred) or expiryDate
-    private Integer expiryDays; // optional; when present, converted to expiryDate
-    private DateTime expiryDate; // persisted in Coupon.expiresAt
+    private int noOfCoupons;
+    private Integer expiryDays;
+    private DateTime expiryDate;
 
     public CouponRequest() {
     }
 
     public CouponRequest(String id, Boolean active, String campaignName, String brandId, String city,
-                         String couponCode, int totalLimit, DateTime expiryDate) {
+                         String couponCode, int noOfCoupons, DateTime expiryDate) {
         this.id = id;
         this.active = active;
         this.campaignName = campaignName;
         this.brandId = brandId;
         this.city = city;
         this.couponCode = couponCode;
-        this.totalLimit = totalLimit;
+        this.noOfCoupons = noOfCoupons;
         this.expiryDate = expiryDate;
     }
 
@@ -90,12 +85,12 @@ public class CouponRequest {
         this.couponCode = couponCode;
     }
 
-    public int getTotalLimit() {
-        return totalLimit;
+    public int getNoOfCoupons() {
+        return noOfCoupons;
     }
 
-    public void setTotalLimit(int totalLimit) {
-        this.totalLimit = totalLimit;
+    public void setNoOfCoupons(int noOfCoupons) {
+        this.noOfCoupons = noOfCoupons;
     }
 
     public Integer getExpiryDays() {
