@@ -66,9 +66,14 @@ public class CustomerCouponService {
 
         // Add to customer's redeemed coupons list
         Customer customer = customerRepository.findById(customerId).orElse(null);
-        if (customer != null && !customer.getRedeemedCoupons().contains(brandId)) {
-            customer.getRedeemedCoupons().add(brandId);
-            customerRepository.save(customer);
+        if (customer != null) {
+            if (customer.getRedeemedCoupons() == null) {
+                customer.setRedeemedCoupons(new java.util.ArrayList<>());
+            }
+            if (!customer.getRedeemedCoupons().contains(brandId)) {
+                customer.getRedeemedCoupons().add(brandId);
+                customerRepository.save(customer);
+            }
         }
 
         return campaign.getCouponCode();
