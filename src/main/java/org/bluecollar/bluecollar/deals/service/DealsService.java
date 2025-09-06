@@ -7,6 +7,7 @@ import org.bluecollar.bluecollar.deals.repository.BrandRepository;
 import org.bluecollar.bluecollar.deals.repository.HomePageRepository;
 import org.bluecollar.bluecollar.deals.repository.PDPRepository;
 import org.bluecollar.bluecollar.deals.repository.PLPRepository;
+import org.bluecollar.bluecollar.deals.repository.UserCouponRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class DealsService {
 
     @Autowired
     private PDPRepository pdpRepository;
+    
+    @Autowired
+    private UserCouponRepository userCouponRepository;
 
     public HomePageResponse getHomePage() {
         List<HomePage> homePages = homePageRepository.findAll();
@@ -465,6 +469,21 @@ public class DealsService {
         response.setRedeemLink(pdp.getRedeemLink());
         response.setRedeemed(pdp.isRedeemed());
         response.setActive(pdp.isActive());
+        
+        // Add coupon campaign info
+        if (pdp.getCampaign() != null) {
+            BrandDetailsResponse.CouponInfo couponInfo = new BrandDetailsResponse.CouponInfo();
+            couponInfo.setCouponCode(pdp.getCampaign().getCouponCode());
+            couponInfo.setAvailable(pdp.getCampaign().isActive());
+            
+            // Calculate remaining coupons
+            long usedCount = userCouponRepository.countByCampaignId(pdp.getCampaign().getId());
+            int remaining = Math.max(0, pdp.getCampaign().getNoOfCoupons() - (int)usedCount);
+            couponInfo.setRemainingCount(remaining);
+            
+            response.setCouponInfo(couponInfo);
+        }
+        
         return response;
     }
 
