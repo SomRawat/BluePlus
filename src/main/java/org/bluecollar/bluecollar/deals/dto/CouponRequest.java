@@ -11,6 +11,7 @@ public class CouponRequest {
     private String brandId;
     private String city;
     private String couponCode;
+    private String couponImageUrl;
     private int noOfCoupons;
     private Integer expiryDays;
     private String expiryDate;

@@ -4,6 +4,7 @@ import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.deals.dto.*;
 import org.bluecollar.bluecollar.deals.model.*;
 import org.bluecollar.bluecollar.deals.repository.BrandRepository;
+import org.bluecollar.bluecollar.deals.repository.CouponRepository;
 import org.bluecollar.bluecollar.deals.repository.HomePageRepository;
 import org.bluecollar.bluecollar.deals.repository.PDPRepository;
 import org.bluecollar.bluecollar.deals.repository.PLPRepository;
@@ -12,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +38,9 @@ public class DealsService {
     
     @Autowired
     private UserCouponRepository userCouponRepository;
+    
+    @Autowired
+    private CouponRepository couponRepository;
 
     public HomePageResponse getHomePage() {
         List<HomePage> homePages = homePageRepository.findAll();
@@ -595,6 +601,24 @@ public class DealsService {
         dto.setRedirectionLink(category.getRedirectionLink());
         dto.setCategoryId(category.getCategoryId());
         dto.setPdpId(category.getPdpId());
+        return dto;
+    }
+    
+    public CouponRequest getCouponByBrandId(String brandId) {
+        Coupon coupon = couponRepository.findByBrandId(brandId)
+                .orElseThrow(() -> new RuntimeException("No coupon found for brandId: " + brandId));
+        
+        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+        CouponRequest dto = new CouponRequest();
+        dto.setId(coupon.getId());
+        dto.setActive(coupon.getActive());
+        dto.setCampaignName(coupon.getCampaignName());
+        dto.setBrandId(coupon.getBrandId());
+        dto.setCity(coupon.getCity());
+        dto.setCouponCode(coupon.getCouponCode());
+        dto.setCouponImageUrl(coupon.getCouponImageUrl());
+        dto.setNoOfCoupons(coupon.getNoOfCoupons());
+        dto.setExpiryDate(coupon.getExpiresAt() != null ? df.format(coupon.getExpiresAt()) : null);
         return dto;
     }
 }

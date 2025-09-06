@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface CouponRepository extends MongoRepository<Coupon, String> {
     Optional<Coupon> findFirstById(String brandId);
     Optional<Coupon> findByIdAndCouponCodeIgnoreCase(String brandId, String couponCode);
+    Optional<Coupon> findByBrandId(String brandId);
 }

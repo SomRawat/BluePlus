@@ -49,4 +49,13 @@ public class AdminCouponController {
         couponService.deleteCampaign(campaignId, deletefromPdpAlso);
         return new BlueCollarApiResponse<>("Campaign deleted successfully", 200);
     }
+
+    @GetMapping("/brand/{brandId}")
+    public BlueCollarApiResponse<CouponRequest> getCouponByBrandId(
+            @PathVariable String brandId,
+            @RequestHeader("Admin-Session-Token") String sessionToken) {
+        adminSessionService.validateSession(sessionToken);
+        CouponRequest coupon = couponService.getCouponByBrandId(brandId);
+        return new BlueCollarApiResponse<>(coupon, 200);
+    }
 }

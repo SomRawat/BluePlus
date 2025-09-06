@@ -115,6 +115,7 @@ public class AdminCouponService {
         coupon.setCampaignName(request.getCampaignName().trim());
         coupon.setCity(StringUtils.hasText(request.getCity()) ? request.getCity().trim() : null);
         coupon.setCouponCode(code);
+        coupon.setCouponImageUrl(request.getCouponImageUrl());
         coupon.setNoOfCoupons(request.getNoOfCoupons());
         coupon.setActive(Boolean.TRUE.equals(request.getActive()) || request.getActive() == null);
         coupon.setExpiresAt(Date.from(expiryInstant));
@@ -138,6 +139,7 @@ public class AdminCouponService {
             dto.setBrandId(c.getBrandId());
             dto.setCity(c.getCity());
             dto.setCouponCode(c.getCouponCode());
+            dto.setCouponImageUrl(c.getCouponImageUrl());
             dto.setNoOfCoupons(c.getNoOfCoupons());
             dto.setExpiryDate(c.getExpiresAt() != null ? df.format(c.getExpiresAt()) : null);
             result.add(dto);
@@ -178,6 +180,24 @@ public class AdminCouponService {
         }
         String random = randomAlphaNum(6);
         return prefix + "-" + random;
+    }
+
+    public CouponRequest getCouponByBrandId(String brandId) {
+        Coupon coupon = couponRepository.findByBrandId(brandId)
+                .orElseThrow(() -> new IllegalArgumentException("No coupon found for brandId: " + brandId));
+        
+        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+        CouponRequest dto = new CouponRequest();
+        dto.setId(coupon.getId());
+        dto.setActive(coupon.getActive());
+        dto.setCampaignName(coupon.getCampaignName());
+        dto.setBrandId(coupon.getBrandId());
+        dto.setCity(coupon.getCity());
+        dto.setCouponCode(coupon.getCouponCode());
+        dto.setCouponImageUrl(coupon.getCouponImageUrl());
+        dto.setNoOfCoupons(coupon.getNoOfCoupons());
+        dto.setExpiryDate(coupon.getExpiresAt() != null ? df.format(coupon.getExpiresAt()) : null);
+        return dto;
     }
 
     private String randomAlphaNum(int len) {

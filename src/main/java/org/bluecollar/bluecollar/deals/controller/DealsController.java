@@ -109,6 +109,17 @@ public class DealsController {
         return new BlueCollarApiResponse<>(userCoupon, 200);
     }
 
+    @GetMapping("/coupon/brand/{brandId}")
+    public BlueCollarApiResponse<CouponRequest> getCouponByBrandId(
+            @PathVariable String brandId,
+            @RequestHeader("Session-Token") String sessionToken) {
+        
+        sessionService.getCustomerIdFromToken(sessionToken);
+        CouponRequest coupon = dealsService.getCouponByBrandId(brandId);
+        
+        return new BlueCollarApiResponse<>(coupon, 200);
+    }
+
     private void markRedeemedBrands(HomePageResponse response, Customer customer) {
         if (response.getPopularBrands() != null) {
             response.getPopularBrands().forEach(brand -> {
