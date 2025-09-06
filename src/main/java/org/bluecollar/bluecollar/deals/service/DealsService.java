@@ -39,7 +39,12 @@ public class DealsService {
     public HomePageResponse getHomePage() {
         List<HomePage> homePages = homePageRepository.findAll();
         if (homePages.isEmpty()) {
-            return new HomePageResponse(); // Return empty response if no data
+            HomePageResponse emptyResponse = new HomePageResponse();
+            emptyResponse.setBanners(new ArrayList<>());
+            emptyResponse.setPopularBrands(new ArrayList<>());
+            emptyResponse.setHandpickedDeals(new ArrayList<>());
+            emptyResponse.setCategories(new ArrayList<>());
+            return emptyResponse;
         }
 
         HomePage homePage = homePages.get(0);
@@ -47,22 +52,22 @@ public class DealsService {
 
         HomePageResponse response = new HomePageResponse();
 
-        // Convert stored data to response DTOs
-        if (data.getBanners() != null) {
-            response.setBanners(data.getBanners().stream().map(this::toHomePageBannerDto).collect(Collectors.toList()));
-        }
+        // Convert stored data to response DTOs, always initialize lists
+        response.setBanners(data.getBanners() != null ? 
+            data.getBanners().stream().map(this::toHomePageBannerDto).collect(Collectors.toList()) : 
+            new ArrayList<>());
 
-        if (data.getPopularBrands() != null) {
-            response.setPopularBrands(data.getPopularBrands().stream().map(this::toHomePagePopularBrandDto).collect(Collectors.toList()));
-        }
+        response.setPopularBrands(data.getPopularBrands() != null ? 
+            data.getPopularBrands().stream().map(this::toHomePagePopularBrandDto).collect(Collectors.toList()) : 
+            new ArrayList<>());
 
-        if (data.getHandpickedDeals() != null) {
-            response.setHandpickedDeals(data.getHandpickedDeals().stream().map(this::toHomePageHandpickedDealDto).collect(Collectors.toList()));
-        }
+        response.setHandpickedDeals(data.getHandpickedDeals() != null ? 
+            data.getHandpickedDeals().stream().map(this::toHomePageHandpickedDealDto).collect(Collectors.toList()) : 
+            new ArrayList<>());
 
-        if (data.getCategories() != null) {
-            response.setCategories(data.getCategories().stream().map(this::toHomePageCategoryDto).collect(Collectors.toList()));
-        }
+        response.setCategories(data.getCategories() != null ? 
+            data.getCategories().stream().map(this::toHomePageCategoryDto).collect(Collectors.toList()) : 
+            new ArrayList<>());
 
         response.setActive(data.isActive());
 
@@ -554,6 +559,8 @@ public class DealsService {
         dto.setId(banner.getId());
         dto.setImageUrl(banner.getImageUrl());
         dto.setRedirectionLink(banner.getRedirectionLink());
+        dto.setCategoryId(banner.getCategoryId());
+        dto.setPdpId(banner.getPdpId());
         return dto;
     }
 
@@ -564,6 +571,8 @@ public class DealsService {
         dto.setDiscount(brand.getDiscount());
         dto.setImageUrl(brand.getImageUrl());
         dto.setRedirectionLink(brand.getRedirectionLink());
+        dto.setCategoryId(brand.getCategoryId());
+        dto.setPdpId(brand.getPdpId());
         return dto;
     }
 
@@ -572,6 +581,8 @@ public class DealsService {
         dto.setId(deal.getId());
         dto.setImageUrl(deal.getImageUrl());
         dto.setRedirectionLink(deal.getRedirectionLink());
+        dto.setCategoryId(deal.getCategoryId());
+        dto.setPdpId(deal.getPdpId());
         return dto;
     }
 
@@ -581,6 +592,8 @@ public class DealsService {
         dto.setLabel(category.getLabel());
         dto.setImageUrl(category.getImageUrl());
         dto.setRedirectionLink(category.getRedirectionLink());
+        dto.setCategoryId(category.getCategoryId());
+        dto.setPdpId(category.getPdpId());
         return dto;
     }
 }

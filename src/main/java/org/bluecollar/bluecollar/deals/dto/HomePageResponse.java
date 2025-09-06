@@ -9,7 +9,7 @@ public class HomePageResponse {
     private List<PopularBrandDto> popularBrands;
     private List<HandpickedDealDto> handpickedDeals;
     private List<CategoryDto> categories;
-    private boolean isActive = true;
+    private boolean active = true;
     
 
     
@@ -18,6 +18,8 @@ public class HomePageResponse {
         private String id;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
     }
     
     @Data
@@ -27,6 +29,8 @@ public class HomePageResponse {
         private String discount;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
         private boolean redeemed = false;
     }
     
@@ -35,6 +39,8 @@ public class HomePageResponse {
         private String id;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
     }
     
     @Data
@@ -43,5 +49,7 @@ public class HomePageResponse {
         private String label;
         private String imageUrl;
         private String redirectionLink;
+        private String categoryId;
+        private String pdpId;
     }
 }
