@@ -58,7 +58,7 @@ public class AdminController {
 
     @PutMapping("/update/{adminId}")
     public BlueCollarApiResponse<AdminResponse> updateAdmin(@PathVariable String adminId,
-                                                            @Valid @RequestBody Admin adminUpdate,
+                                                            @Valid @RequestBody UpdateAdminRequest adminUpdate,
                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
         AdminResponse response = adminService.updateAdmin(adminId, adminUpdate, sessionToken);
         return new BlueCollarApiResponse<>(response, 200);

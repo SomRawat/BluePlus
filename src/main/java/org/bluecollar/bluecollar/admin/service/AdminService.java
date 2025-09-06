@@ -155,7 +155,7 @@ public class AdminService {
     }
     
     @Transactional
-    public AdminResponse updateAdmin(String adminId, Admin adminUpdate, String sessionToken) {
+    public AdminResponse updateAdmin(String adminId, UpdateAdminRequest adminUpdate, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
         
@@ -166,7 +166,7 @@ public class AdminService {
         
         Admin admin = adminOpt.get();
         
-        // Update fields (password updates not allowed - use forgot password flow)
+        // Update fields (password updates optional and without validation)
         if (adminUpdate.getName() != null) {
             admin.setName(adminUpdate.getName());
         }
@@ -178,9 +178,9 @@ public class AdminService {
             }
             admin.setEmail(adminUpdate.getEmail());
         }
-        // Password updates removed - use forgot password flow instead
-        if (adminUpdate.getRole() != null) {
-            admin.setRole(adminUpdate.getRole());
+        // Password updates allowed but optional (no validation)
+        if (adminUpdate.getPassword() != null && !adminUpdate.getPassword().trim().isEmpty()) {
+            admin.setPassword(passwordEncoder.encode(adminUpdate.getPassword()));
         }
         
         admin.setUpdatedAt(LocalDateTime.now());
