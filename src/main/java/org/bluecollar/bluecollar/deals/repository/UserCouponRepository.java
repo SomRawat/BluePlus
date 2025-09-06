@@ -12,4 +12,5 @@ public interface UserCouponRepository extends MongoRepository<UserCoupon, String
     Optional<UserCoupon> findByCustomerIdAndBrandId(String customerId, String brandId);
     List<UserCoupon> findByCustomerId(String customerId);
     boolean existsByCustomerIdAndBrandId(String customerId, String brandId);
+    long countByCampaignId(String campaignId);
 }

@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.UUID;
 
 @Service
 public class CustomerCouponService {
@@ -24,7 +23,9 @@ public class CustomerCouponService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    public String generateCoupon(String customerId, String brandId) {
+
+
+    public String redeemCoupon(String customerId, String brandId) {
         // Check if user already has a coupon for this brand
         if (userCouponRepository.existsByCustomerIdAndBrandId(customerId, brandId)) {
             throw new RuntimeException("You already have a coupon for this brand");
@@ -44,17 +45,22 @@ public class CustomerCouponService {
             throw new RuntimeException("Campaign has expired");
         }
 
-        // Generate unique coupon code for user
-        String userCouponCode = generateUserCouponCode(campaign.getCouponCode());
+        // Check if campaign has available coupons
+        long usedCoupons = userCouponRepository.countByCampaignId(campaign.getId());
+        if (usedCoupons >= campaign.getNoOfCoupons()) {
+            throw new RuntimeException("All coupons for this campaign have been used");
+        }
 
-        // Create user coupon
+        // Create user coupon with campaign's coupon code
         UserCoupon userCoupon = new UserCoupon(
             customerId, 
             brandId, 
             campaign.getId(), 
-            userCouponCode, 
+            campaign.getCouponCode(), 
             campaign.getExpiresAt()
         );
+        userCoupon.setRedeemed(true);
+        userCoupon.setRedeemedAt(new Date());
         
         userCouponRepository.save(userCoupon);
 
@@ -65,32 +71,12 @@ public class CustomerCouponService {
             customerRepository.save(customer);
         }
 
-        return userCouponCode;
-    }
-
-    public void redeemCoupon(String customerId, String brandId) {
-        UserCoupon userCoupon = userCouponRepository.findByCustomerIdAndBrandId(customerId, brandId)
-                .orElseThrow(() -> new RuntimeException("No coupon found for this brand"));
-
-        if (userCoupon.isRedeemed()) {
-            throw new RuntimeException("Coupon already redeemed");
-        }
-
-        if (userCoupon.getExpiresAt() != null && userCoupon.getExpiresAt().before(new Date())) {
-            throw new RuntimeException("Coupon has expired");
-        }
-
-        userCoupon.setRedeemed(true);
-        userCoupon.setRedeemedAt(new Date());
-        userCouponRepository.save(userCoupon);
+        return campaign.getCouponCode();
     }
 
     public UserCoupon getUserCoupon(String customerId, String brandId) {
         return userCouponRepository.findByCustomerIdAndBrandId(customerId, brandId).orElse(null);
     }
 
-    private String generateUserCouponCode(String baseCouponCode) {
-        String suffix = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        return baseCouponCode + "-" + suffix;
-    }
+
 }

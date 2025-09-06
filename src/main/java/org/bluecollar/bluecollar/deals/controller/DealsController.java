@@ -81,16 +81,7 @@ public class DealsController {
         return new BlueCollarApiResponse<>(response, 200);
     }
 
-    @PostMapping("/brand/{brandId}/generate")
-    public BlueCollarApiResponse<String> generateCoupon(
-            @PathVariable String brandId,
-            @RequestHeader("Session-Token") String sessionToken) {
-        
-        String customerId = sessionService.getCustomerIdFromToken(sessionToken);
-        String couponCode = customerCouponService.generateCoupon(customerId, brandId);
-        
-        return new BlueCollarApiResponse<>(couponCode, 200);
-    }
+
 
     @PostMapping("/brand/{brandId}/redeem")
     public BlueCollarApiResponse<String> redeemCoupon(
@@ -98,9 +89,9 @@ public class DealsController {
             @RequestHeader("Session-Token") String sessionToken) {
         
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);
-        customerCouponService.redeemCoupon(customerId, brandId);
+        String couponCode = customerCouponService.redeemCoupon(customerId, brandId);
         
-        return new BlueCollarApiResponse<>("Coupon redeemed successfully", 200);
+        return new BlueCollarApiResponse<>(couponCode, 200);
     }
 
     @GetMapping("/brand/{brandId}/coupon")
