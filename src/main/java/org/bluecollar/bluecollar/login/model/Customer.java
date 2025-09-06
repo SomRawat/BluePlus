@@ -32,6 +32,9 @@ public class Customer {
     private String state;
     private String pincode;
     
+    // Track coupon redemption clicks
+    private java.util.List<String> redeemedCoupons = new java.util.ArrayList<>();
+    
     @CreatedDate
     private LocalDateTime createdAt;
     
@@ -86,4 +89,7 @@ public class Customer {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+    public java.util.List<String> getRedeemedCoupons() { return redeemedCoupons; }
+    public void setRedeemedCoupons(java.util.List<String> redeemedCoupons) { this.redeemedCoupons = redeemedCoupons; }
 }

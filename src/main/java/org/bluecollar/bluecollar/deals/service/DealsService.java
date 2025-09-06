@@ -77,7 +77,7 @@ public class DealsService {
         response.setBrandName(brand.getName());
         response.setBannerLink(brand.getImageUrl());
         response.setBrandDescription(brand.getDescription());
-        response.setDiscountText(brand.getDiscountText());
+        response.setCouponCode(brand.getDiscountText());
         
         if (brand.getValidTill() != null) {
             response.setValidTill("Valid till: " + brand.getValidTill().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
@@ -418,6 +418,7 @@ public class DealsService {
     
     private HomePageResponse.PopularBrandDto toPopularBrandDto(Brand brand) {
         HomePageResponse.PopularBrandDto dto = new HomePageResponse.PopularBrandDto();
+        dto.setBrandId(brand.getId());
         dto.setName(brand.getName());
         dto.setDiscount(brand.getDiscount());
         dto.setImageUrl(brand.getImageUrl());
@@ -474,7 +475,7 @@ public class DealsService {
         response.setBrandName(pdp.getBrandName());
         response.setBannerLink(pdp.getBannerLink());
         response.setBrandDescription(pdp.getBrandDescription());
-        response.setDiscountText(pdp.getDiscountText());
+        response.setCouponCode(pdp.getDiscountText());
         response.setValidTill(pdp.getValidTill());
         response.setHowItWorksBullets(pdp.getHowItWorksBullets());
         response.setBenefits(pdp.getBenefits());
