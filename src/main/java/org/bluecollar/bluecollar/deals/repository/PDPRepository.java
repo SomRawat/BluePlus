@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PDPRepository extends MongoRepository<PDP, String> {
+    boolean existsByCampaign_CouponCodeIgnoreCase(String code);
     // id is now @Id, use findById() for queries
 }
