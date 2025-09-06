@@ -111,21 +111,23 @@ public class DealsService {
     public CategoryDealsResponse getCategoryDeals(String categoryId, String tab) {
         CategoryDealsResponse response = new CategoryDealsResponse();
         
-        // Try to get category, use categoryId as title if not found
-        Category category = categoryRepository.findById(categoryId).orElse(null);
-        response.setTitle(category != null ? category.getLabel() : categoryId);
-        response.setTabs(Arrays.asList("All Deals", "Nearby", "Popular", "Trending", "Latest", "Top Rated"));
-        response.setActiveTab(tab != null ? tab : "All Deals");
-        
-        // Get offers from PLP data if exists, otherwise use brands
+        // Get PLP data by categoryId
         PLP plp = plpRepository.findById(categoryId).orElse(null);
-        if (plp != null && plp.getOffers() != null) {
-            response.setOffers(plp.getOffers().stream().map(this::toOfferResponseDto).collect(Collectors.toList()));
+        if (plp != null) {
+            response.setTitle(plp.getTitle());
+            response.setTabs(plp.getTabs() != null ? plp.getTabs() : Arrays.asList("All Deals"));
+            response.setActiveTab(tab != null ? tab : plp.getActiveTab());
+            response.setOffers(plp.getOffers() != null ? 
+                plp.getOffers().stream().map(this::toOfferResponseDto).collect(Collectors.toList()) : 
+                new ArrayList<>());
             response.setActive(plp.isActive());
         } else {
-            // Fallback to brands as offers
-            List<Brand> brands = brandRepository.findByActiveTrue();
-            response.setOffers(brands.stream().map(this::toOfferDto).collect(Collectors.toList()));
+            // Fallback when no PLP found
+            response.setTitle(categoryId);
+            response.setTabs(Arrays.asList("All Deals", "Nearby", "Popular", "Trending", "Latest", "Top Rated"));
+            response.setActiveTab(tab != null ? tab : "All Deals");
+            response.setOffers(new ArrayList<>());
+            response.setActive(true);
         }
         
         return response;
