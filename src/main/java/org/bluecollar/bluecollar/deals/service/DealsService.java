@@ -37,28 +37,34 @@ public class DealsService {
     private PDPRepository pdpRepository;
     
     public HomePageResponse getHomePage() {
+        List<HomePage> homePages = homePageRepository.findAll();
+        if (homePages.isEmpty()) {
+            return new HomePageResponse(); // Return empty response if no data
+        }
+        
+        HomePage homePage = homePages.get(0);
+        HomePageData data = homePage.getData();
+        
         HomePageResponse response = new HomePageResponse();
         
-        // Get banners
-        List<Banner> banners = bannerRepository.findByActiveTrue();
-        response.setBanners(banners.stream().map(this::toBannerDto).collect(Collectors.toList()));
-        
-        // Get popular brands
-        List<Brand> brands = brandRepository.findByActiveTrue();
-        response.setPopularBrands(brands.stream().map(this::toPopularBrandDto).collect(Collectors.toList()));
-        
-        // Get handpicked deals (same as banners for now)
-        response.setHandpickedDeals(banners.stream().map(this::toHandpickedDealDto).collect(Collectors.toList()));
-        
-        // Get categories
-        List<Category> categories = categoryRepository.findByActiveTrue();
-        response.setCategories(categories.stream().map(this::toCategoryDto).collect(Collectors.toList()));
-        
-        // Set isActive from home page data if exists
-        List<HomePage> homePages = homePageRepository.findAll();
-        if (!homePages.isEmpty()) {
-            response.setActive(homePages.get(0).getData().isActive());
+        // Convert stored data to response DTOs
+        if (data.getBanners() != null) {
+            response.setBanners(data.getBanners().stream().map(this::toHomePageBannerDto).collect(Collectors.toList()));
         }
+        
+        if (data.getPopularBrands() != null) {
+            response.setPopularBrands(data.getPopularBrands().stream().map(this::toHomePagePopularBrandDto).collect(Collectors.toList()));
+        }
+        
+        if (data.getHandpickedDeals() != null) {
+            response.setHandpickedDeals(data.getHandpickedDeals().stream().map(this::toHomePageHandpickedDealDto).collect(Collectors.toList()));
+        }
+        
+        if (data.getCategories() != null) {
+            response.setCategories(data.getCategories().stream().map(this::toHomePageCategoryDto).collect(Collectors.toList()));
+        }
+        
+        response.setActive(data.isActive());
         
         return response;
     }
@@ -548,6 +554,42 @@ public class DealsService {
         BrandDetailsResponse.FAQDto dto = new BrandDetailsResponse.FAQDto();
         dto.setQuestion(faq.getQuestion());
         dto.setAnswer(faq.getAnswer());
+        return dto;
+    }
+    
+    // HomePage data converters
+    private HomePageResponse.BannerDto toHomePageBannerDto(HomePageData.BannerItem banner) {
+        HomePageResponse.BannerDto dto = new HomePageResponse.BannerDto();
+        dto.setId(banner.getId());
+        dto.setImageUrl(banner.getImageUrl());
+        dto.setRedirectionLink(banner.getRedirectionLink());
+        return dto;
+    }
+    
+    private HomePageResponse.PopularBrandDto toHomePagePopularBrandDto(HomePageData.PopularBrand brand) {
+        HomePageResponse.PopularBrandDto dto = new HomePageResponse.PopularBrandDto();
+        dto.setBrandId(brand.getPdpId());
+        dto.setName(brand.getName());
+        dto.setDiscount(brand.getDiscount());
+        dto.setImageUrl(brand.getImageUrl());
+        dto.setRedirectionLink(brand.getRedirectionLink());
+        return dto;
+    }
+    
+    private HomePageResponse.HandpickedDealDto toHomePageHandpickedDealDto(HomePageData.HandpickedDeal deal) {
+        HomePageResponse.HandpickedDealDto dto = new HomePageResponse.HandpickedDealDto();
+        dto.setId(deal.getId());
+        dto.setImageUrl(deal.getImageUrl());
+        dto.setRedirectionLink(deal.getRedirectionLink());
+        return dto;
+    }
+    
+    private HomePageResponse.CategoryDto toHomePageCategoryDto(HomePageData.CategoryItem category) {
+        HomePageResponse.CategoryDto dto = new HomePageResponse.CategoryDto();
+        dto.setId(category.getId());
+        dto.setLabel(category.getLabel());
+        dto.setImageUrl(category.getImageUrl());
+        dto.setRedirectionLink(category.getRedirectionLink());
         return dto;
     }
 }
