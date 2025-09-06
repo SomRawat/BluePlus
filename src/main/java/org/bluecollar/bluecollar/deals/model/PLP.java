@@ -22,6 +22,7 @@ public class PLP {
         private String discount;
         private String discountLabel;
         private String imageUrl;
+        private String brandId;
         private boolean active = true;
 
         public OfferItem() {}
@@ -40,6 +41,7 @@ public class PLP {
             this.discount = dto.getDiscount();
             this.discountLabel = dto.getDiscountLabel();
             this.imageUrl = dto.getImageUrl();
+            this.brandId = dto.getBrandId();
             this.active = dto.isActive();
         }
 
@@ -53,6 +55,8 @@ public class PLP {
         public void setDiscountLabel(String discountLabel) { this.discountLabel = discountLabel; }
         public String getImageUrl() { return imageUrl; }
         public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+        public String getBrandId() { return brandId; }
+        public void setBrandId(String brandId) { this.brandId = brandId; }
         public boolean isActive() { return active; }
         public void setActive(boolean active) { this.active = active; }
     }

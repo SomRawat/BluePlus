@@ -20,6 +20,7 @@ public class CategoryDealsResponse {
         private String discount;
         private String discountLabel;
         private String imageUrl;
+        private String brandId;
         private boolean redeemed = false;
     }
 }

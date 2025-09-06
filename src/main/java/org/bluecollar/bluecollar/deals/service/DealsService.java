@@ -454,6 +454,7 @@ public class DealsService {
         dto.setDiscount(offer.getDiscount());
         dto.setDiscountLabel(offer.getDiscountLabel());
         dto.setImageUrl(offer.getImageUrl());
+        dto.setBrandId(offer.getBrandId());
         return dto;
     }
 
