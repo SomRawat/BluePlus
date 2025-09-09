@@ -1,6 +1,7 @@
 package org.bluecollar.bluecollar.deals.controller;
 
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
+import org.bluecollar.bluecollar.common.service.TranslationService;
 import org.bluecollar.bluecollar.deals.dto.*;
 import org.bluecollar.bluecollar.deals.model.UserCoupon;
 import org.bluecollar.bluecollar.deals.service.CustomerCouponService;
@@ -19,18 +20,23 @@ public class DealsController {
     private final SessionService sessionService;
     private final CustomerRepository customerRepository;
     private final CustomerCouponService customerCouponService;
+    private final TranslationService translationService;
 
     @Autowired
     public DealsController(DealsService dealsService, SessionService sessionService, 
-                          CustomerRepository customerRepository, CustomerCouponService customerCouponService) {
-        this.dealsService = dealsService;
-        this.sessionService = sessionService;
-        this.customerRepository = customerRepository;
-        this.customerCouponService = customerCouponService;
-    }
+                             CustomerRepository customerRepository, CustomerCouponService customerCouponService,
+                             org.bluecollar.bluecollar.common.service.TranslationService translationService) {
+            this.dealsService = dealsService;
+            this.sessionService = sessionService;
+            this.customerRepository = customerRepository;
+            this.customerCouponService = customerCouponService;
+            this.translationService = translationService;
+        }
 
     @GetMapping("/home")
-    public BlueCollarApiResponse<HomePageResponse> getHomePage(@RequestHeader("Session-Token") String sessionToken) {
+    public BlueCollarApiResponse<HomePageResponse> getHomePage(
+            @RequestHeader("Session-Token") String sessionToken,
+            @RequestHeader(value = "X-Accept-Language", required = false) String acceptLanguage) {
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);
         HomePageResponse response = dealsService.getHomePage();
         
@@ -41,14 +47,15 @@ public class DealsController {
             markRedeemedBrands(response, customer);
         }
         
-        return new BlueCollarApiResponse<>(response, 200);
+        return new BlueCollarApiResponse<>(maybeTranslate(response, acceptLanguage), 200);
     }
 
     @GetMapping("/category/{categoryId}")
     public BlueCollarApiResponse<CategoryDealsResponse> getCategoryDeals(
-            @PathVariable String categoryId,
-            @RequestParam(required = false) String tab,
-            @RequestHeader("Session-Token") String sessionToken) {
+                @PathVariable String categoryId,
+                @RequestParam(required = false) String tab,
+                @RequestHeader("Session-Token") String sessionToken,
+                @RequestHeader(value = "X-Accept-Language", required = false) String acceptLanguage) {
         
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);
         CategoryDealsResponse response = dealsService.getCategoryDeals(categoryId, tab);
@@ -60,13 +67,14 @@ public class DealsController {
             markRedeemedOffers(response, customer);
         }
         
-        return new BlueCollarApiResponse<>(response, 200);
+        return new BlueCollarApiResponse<>(maybeTranslate(response, acceptLanguage), 200);
     }
 
     @GetMapping("/brand/{brandId}")
     public BlueCollarApiResponse<BrandDetailsResponse> getBrandDetails(
-            @PathVariable String brandId,
-            @RequestHeader("Session-Token") String sessionToken) {
+                @PathVariable String brandId,
+                @RequestHeader("Session-Token") String sessionToken,
+                @RequestHeader(value = "X-Accept-Language", required = false) String acceptLanguage) {
         
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);
         BrandDetailsResponse response = dealsService.getBrandDetails(brandId);
@@ -78,7 +86,7 @@ public class DealsController {
             response.setUserCouponCode(userCoupon.getCouponCode());
         }
         
-        return new BlueCollarApiResponse<>(response, 200);
+        return new BlueCollarApiResponse<>(maybeTranslate(response, acceptLanguage), 200);
     }
 
 
@@ -97,7 +105,8 @@ public class DealsController {
     @GetMapping("/brand/{brandId}/coupon")
     public BlueCollarApiResponse<UserCoupon> getUserCoupon(
             @PathVariable String brandId,
-            @RequestHeader("Session-Token") String sessionToken) {
+            @RequestHeader("Session-Token") String sessionToken,
+            @RequestHeader(value = "X-Accept-Language", required = false) String acceptLanguage) {
         
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);
         UserCoupon userCoupon = customerCouponService.getUserCoupon(customerId, brandId);
@@ -106,18 +115,26 @@ public class DealsController {
             throw new RuntimeException("No coupon found for this brand");
         }
         
-        return new BlueCollarApiResponse<>(userCoupon, 200);
+        return new BlueCollarApiResponse<>(maybeTranslate(userCoupon, acceptLanguage), 200);
     }
 
     @GetMapping("/coupon/brand/{brandId}")
     public BlueCollarApiResponse<CouponRequest> getCouponByBrandId(
             @PathVariable String brandId,
-            @RequestHeader("Session-Token") String sessionToken) {
+            @RequestHeader("Session-Token") String sessionToken,
+            @RequestHeader(value = "X-Accept-Language", required = false) String acceptLanguage) {
         
         sessionService.getCustomerIdFromToken(sessionToken);
         CouponRequest coupon = dealsService.getCouponByBrandId(brandId);
         
-        return new BlueCollarApiResponse<>(coupon, 200);
+        return new BlueCollarApiResponse<>(maybeTranslate(coupon, acceptLanguage), 200);
+    }
+
+    private <T> T maybeTranslate(T body, String acceptLanguage) {
+        if (acceptLanguage == null || acceptLanguage.equals("en")) {
+            return body;
+        }
+        return translationService.translateObject(body, acceptLanguage);
     }
 
     private void markRedeemedBrands(HomePageResponse response, Customer customer) {
