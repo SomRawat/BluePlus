@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class GoogleTranslateConfig {
@@ -21,8 +22,9 @@ public class GoogleTranslateConfig {
     
     @Bean
     public Translate googleTranslate() throws IOException {
+        String processedJson = credentialsJson.replace("\\n", "\n");
         GoogleCredentials credentials = GoogleCredentials
-            .fromStream(new ByteArrayInputStream(credentialsJson.getBytes()));
+            .fromStream(new ByteArrayInputStream(processedJson.getBytes(StandardCharsets.UTF_8)));
         
         return TranslateOptions.newBuilder()
             .setCredentials(credentials)
