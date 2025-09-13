@@ -46,15 +46,31 @@ public class TranslationService {
             field.setAccessible(true);
             try {
                 Object value = field.get(obj);
-                if (value instanceof String && !((String) value).isEmpty()) {
+                if (value instanceof String && !((String) value).isEmpty() && !isUrlField(field.getName())) {
                     field.set(obj, translateText((String) value, targetLanguage));
                 } else if (value instanceof List) {
-                    ((List<?>) value).forEach(item -> translateFields(item, targetLanguage));
+                    List<?> list = (List<?>) value;
+                    for (Object item : list) {
+                        if (item instanceof String && !isUrlField(field.getName())) {
+                            // For List<String>, translate each string
+                            int index = list.indexOf(item);
+                            ((List<String>) list).set(index, translateText((String) item, targetLanguage));
+                        } else if (item != null && !isPrimitiveOrWrapper(item.getClass())) {
+                            // For List<Object>, translate fields of each object
+                            translateFields(item, targetLanguage);
+                        }
+                    }
                 } else if (value != null && !isPrimitiveOrWrapper(value.getClass())) {
                     translateFields(value, targetLanguage);
                 }
             } catch (Exception ignored) {}
         }
+    }
+    
+    private boolean isUrlField(String fieldName) {
+        return fieldName.toLowerCase().contains("url") || 
+               fieldName.toLowerCase().contains("link") ||
+               fieldName.toLowerCase().contains("image");
     }
     
     private boolean isPrimitiveOrWrapper(Class<?> clazz) {
