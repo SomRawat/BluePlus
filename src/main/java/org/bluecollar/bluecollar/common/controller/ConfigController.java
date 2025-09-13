@@ -17,7 +17,7 @@ public class ConfigController {
     private MongoTemplate mongoTemplate;
     
     @GetMapping("/translations")
-    public BlueCollarApiResponse<Map<String, String>> getTranslations(
+    public BlueCollarApiResponse<Object> getTranslations(
             @RequestParam String pageType,
             @RequestHeader(value = "X-Accept-Language", defaultValue = "en") String language) {
         
@@ -27,7 +27,7 @@ public class ConfigController {
         Map<String, Object> result = mongoTemplate.findOne(query, Map.class, "config");
         
         if (result != null && result.containsKey("translations")) {
-            Map<String, String> translations = (Map<String, String>) result.get("translations");
+            Object translations = result.get("translations");
             return new BlueCollarApiResponse<>(translations, 200);
         }
         return new BlueCollarApiResponse<>(Map.of(), 404);
