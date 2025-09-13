@@ -2,6 +2,7 @@ package org.bluecollar.bluecollar.login.controller;
 
 import jakarta.validation.Valid;
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
+import org.bluecollar.bluecollar.common.service.TranslationService;
 import org.bluecollar.bluecollar.login.dto.*;
 import org.bluecollar.bluecollar.login.model.Customer;
 import org.bluecollar.bluecollar.login.service.AuthService;
@@ -15,11 +16,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final SessionService sessionService;
+    private final TranslationService translationService;
 
     @Autowired
-    public AuthController(AuthService authService, SessionService sessionService) {
+    public AuthController(AuthService authService, SessionService sessionService, TranslationService translationService) {
         this.authService = authService;
         this.sessionService = sessionService;
+        this.translationService = translationService;
     }
 
     @PostMapping("/send-otp")
@@ -59,9 +62,17 @@ public class AuthController {
     }
 
     @GetMapping("/profile")
-    public BlueCollarApiResponse<Customer> getCustomerProfile(@RequestHeader("Session-Token") String sessionToken) {
+    public BlueCollarApiResponse<Customer> getCustomerProfile(
+            @RequestHeader("Session-Token") String sessionToken,
+            @RequestHeader(value = "X-Accept-Language", required = false) String acceptLanguage) {
         Customer customer = authService.getCustomerDetails(sessionToken);
-        return new BlueCollarApiResponse<>(customer, 200);
-
+        return new BlueCollarApiResponse<>(maybeTranslate(customer, acceptLanguage), 200);
+    }
+    
+    private <T> T maybeTranslate(T body, String acceptLanguage) {
+        if (acceptLanguage == null || acceptLanguage.equals("en")) {
+            return body;
+        }
+        return translationService.translateObject(body, acceptLanguage);
     }
 }
