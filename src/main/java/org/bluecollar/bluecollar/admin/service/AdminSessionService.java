@@ -55,7 +55,7 @@ public class AdminSessionService implements IAdminSessionService {
     public void validateCanManageUsers(String sessionToken) {
         AdminSession session = getSession(sessionToken);
         if (!session.getRole().canManageUsers()) {
-            throw new UnauthorizedException("Only SUPER_ADMIN can manage users");
+            throw new UnauthorizedException("Insufficient permissions to manage users");
         }
     }
     
@@ -71,13 +71,13 @@ public class AdminSessionService implements IAdminSessionService {
     public void validateCanCreateAdmins(String sessionToken) {
         AdminSession session = getSession(sessionToken);
         if (!session.getRole().canCreateAdmins()) {
-            throw new UnauthorizedException("Only SUPER_ADMIN can create new admin users");
+            throw new UnauthorizedException("Insufficient permissions to create admin users");
         }
     }
     
     @Override
     public void validateCanViewDeals(String sessionToken) {
-        AdminSession session = getSession(sessionToken);
+        getSession(sessionToken);
         // All roles can view deals (SUPER_ADMIN, ADMIN, VIEWER)
         // This method just validates the session exists
     }

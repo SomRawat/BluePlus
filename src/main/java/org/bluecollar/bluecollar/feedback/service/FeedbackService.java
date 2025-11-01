@@ -4,27 +4,27 @@ import org.bluecollar.bluecollar.feedback.dto.FeedbackRequest;
 import org.bluecollar.bluecollar.feedback.model.Feedback;
 import org.bluecollar.bluecollar.feedback.repository.FeedbackRepository;
 import org.bluecollar.bluecollar.login.model.Customer;
-import org.bluecollar.bluecollar.login.service.AuthService;
 import org.bluecollar.bluecollar.login.service.IAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
 
 @Service
 public class FeedbackService implements IFeedbackService {
     
-    @Autowired
-    private FeedbackRepository feedbackRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final IAuthService authService;
+    private final JavaMailSender mailSender;
     
-    @Autowired
-    private IAuthService authService;
-    
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    public FeedbackService(FeedbackRepository feedbackRepository, 
+                          IAuthService authService,
+                          @Autowired(required = false) JavaMailSender mailSender) {
+        this.feedbackRepository = feedbackRepository;
+        this.authService = authService;
+        this.mailSender = mailSender;
+    }
     
     @Override
     @Async

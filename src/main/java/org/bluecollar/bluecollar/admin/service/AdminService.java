@@ -129,7 +129,6 @@ public class AdminService implements IAdminService {
     public AdminResponse updateAdminRole(String adminId, UpdateAdminRoleRequest request, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
-        // Enforce role update rules: ADMIN cannot assign roles other than VIEWER
         AdminSessionService.AdminSession updater = sessionService.getSession(sessionToken);
         
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
@@ -137,22 +136,42 @@ public class AdminService implements IAdminService {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
-        if (updater.getRole() == AdminRole.ADMIN && request.getRole() != AdminRole.VIEWER) {
-            throw new BadRequestException("ADMIN can only set role to VIEWER");
+        Admin target = adminOpt.get();
+        
+        // ADMIN can only update VIEWER roles
+        if (updater.getRole() == AdminRole.ADMIN) {
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only update VIEWER roles");
+            }
+            if (request.getRole() != AdminRole.VIEWER) {
+                throw new BadRequestException("ADMIN can only set role to VIEWER");
+            }
         }
-        if (request.getRole() == AdminRole.SUPER_ADMIN) {
+        
+        // Don't allow changing the last SUPER_ADMIN to a different role
+        if (target.getRole() == AdminRole.SUPER_ADMIN && request.getRole() != AdminRole.SUPER_ADMIN) {
             long superAdminCount = adminRepository.findAll().stream()
-                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN && !a.getId().equals(adminId))
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
+                    .count();
+            if (superAdminCount <= 1) {
+                throw new BadRequestException("Cannot change role of the last SUPER_ADMIN");
+            }
+        }
+        
+        // Don't allow creating more than one SUPER_ADMIN
+        if (request.getRole() == AdminRole.SUPER_ADMIN && target.getRole() != AdminRole.SUPER_ADMIN) {
+            long superAdminCount = adminRepository.findAll().stream()
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
                     .count();
             if (superAdminCount >= 1) {
                 throw new BadRequestException("A SUPER_ADMIN already exists");
             }
         }
-        admin.setRole(request.getRole());
-        admin.setUpdatedAt(LocalDateTime.now());
         
-        Admin savedAdmin = adminRepository.save(admin);
+        target.setRole(request.getRole());
+        target.setUpdatedAt(LocalDateTime.now());
+        
+        Admin savedAdmin = adminRepository.save(target);
         return new AdminResponse(savedAdmin);
     }
     
@@ -162,16 +181,24 @@ public class AdminService implements IAdminService {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
         
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+        
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
+        Admin target = adminOpt.get();
         
-        // Update fields (password updates optional and without validation)
+        // ADMIN can only update VIEWER details
+        if (callerRole == AdminRole.ADMIN && target.getRole() != AdminRole.VIEWER) {
+            throw new UnauthorizedException("ADMIN can only update VIEWER details");
+        }
+        
+        // Update fields
         if (adminUpdate.getName() != null) {
-            admin.setName(adminUpdate.getName());
+            target.setName(adminUpdate.getName());
         }
         if (adminUpdate.getEmail() != null) {
             // Check if email is already taken by another admin
@@ -179,16 +206,16 @@ public class AdminService implements IAdminService {
             if (existingAdmin.isPresent() && !existingAdmin.get().getId().equals(adminId)) {
                 throw new BadRequestException("Email already registered with another admin");
             }
-            admin.setEmail(adminUpdate.getEmail());
+            target.setEmail(adminUpdate.getEmail());
         }
         // Password updates allowed but optional (no validation)
         if (adminUpdate.getPassword() != null && !adminUpdate.getPassword().trim().isEmpty()) {
-            admin.setPassword(passwordEncoder.encode(adminUpdate.getPassword()));
+            target.setPassword(passwordEncoder.encode(adminUpdate.getPassword()));
         }
         
-        admin.setUpdatedAt(LocalDateTime.now());
+        target.setUpdatedAt(LocalDateTime.now());
         
-        Admin savedAdmin = adminRepository.save(admin);
+        Admin savedAdmin = adminRepository.save(target);
         return new AdminResponse(savedAdmin);
     }
     
@@ -240,16 +267,42 @@ public class AdminService implements IAdminService {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
         
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+        
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
-        admin.setActive(false);
-        admin.setUpdatedAt(LocalDateTime.now());
+        Admin target = adminOpt.get();
         
-        adminRepository.save(admin);
+        // Prevent self-deactivation
+        if (caller.getAdminId().equals(adminId)) {
+            throw new BadRequestException("Cannot deactivate yourself");
+        }
+        
+        // ADMIN cannot deactivate SUPER_ADMIN or other ADMINs
+        if (callerRole == AdminRole.ADMIN) {
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only deactivate VIEWER");
+            }
+        }
+        
+        // Don't allow deactivating the last active SUPER_ADMIN
+        if (target.getRole() == AdminRole.SUPER_ADMIN && target.isActive()) {
+            long activeSuperAdminCount = adminRepository.findAll().stream()
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN && a.isActive())
+                    .count();
+            if (activeSuperAdminCount <= 1) {
+                throw new BadRequestException("Cannot deactivate the last active SUPER_ADMIN");
+            }
+        }
+        
+        target.setActive(false);
+        target.setUpdatedAt(LocalDateTime.now());
+        
+        adminRepository.save(target);
         return "Admin deactivated successfully";
     }
     
@@ -259,16 +312,27 @@ public class AdminService implements IAdminService {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
         
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+        
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
-        admin.setActive(true);
-        admin.setUpdatedAt(LocalDateTime.now());
+        Admin target = adminOpt.get();
         
-        adminRepository.save(admin);
+        // ADMIN cannot activate SUPER_ADMIN or other ADMINs
+        if (callerRole == AdminRole.ADMIN) {
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only activate VIEWER");
+            }
+        }
+        
+        target.setActive(true);
+        target.setUpdatedAt(LocalDateTime.now());
+        
+        adminRepository.save(target);
         return "Admin activated successfully";
     }
     
