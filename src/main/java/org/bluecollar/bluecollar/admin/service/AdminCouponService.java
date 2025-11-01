@@ -80,6 +80,11 @@ public class AdminCouponService implements IAdminCouponService {
         campaign.setNoOfCoupons(request.getNoOfCoupons());
         campaign.setActive(!Boolean.FALSE.equals(request.getActive()));
         campaign.setExpiryDays(request.getExpiryDays());
+        
+        // Initialize remaining count for new campaigns or when total count is updated
+        if (!isUpdate || campaign.getRemaining() == null) {
+            campaign.setRemaining(request.getNoOfCoupons());
+        }
 
         Instant expiryInstant = LocalDate.now(ZoneOffset.UTC)
                 .plusDays(request.getExpiryDays().longValue())

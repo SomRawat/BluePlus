@@ -501,9 +501,15 @@ public class DealsService implements IDealsService {
             couponInfo.setCouponCode(pdp.getCampaign().getCouponCode());
             couponInfo.setAvailable(pdp.getCampaign().isActive());
             
-            // Calculate remaining coupons
-            long usedCount = userCouponRepository.countByCampaignId(pdp.getCampaign().getId());
-            int remaining = Math.max(0, pdp.getCampaign().getNoOfCoupons() - (int)usedCount);
+            // Use cached remaining count if available, otherwise calculate dynamically
+            int remaining;
+            if (pdp.getCampaign().getRemaining() != null) {
+                remaining = pdp.getCampaign().getRemaining();
+            } else {
+                // Fallback: Calculate remaining coupons dynamically
+                long usedCount = userCouponRepository.countByCampaignId(pdp.getCampaign().getId());
+                remaining = Math.max(0, pdp.getCampaign().getNoOfCoupons() - (int)usedCount);
+            }
             couponInfo.setRemainingCount(remaining);
             
             response.setCouponInfo(couponInfo);

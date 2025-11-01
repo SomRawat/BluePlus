@@ -8,6 +8,7 @@ import org.bluecollar.bluecollar.deals.repository.PDPRepository;
 import org.bluecollar.bluecollar.deals.repository.UserCouponRepository;
 import org.bluecollar.bluecollar.login.model.Customer;
 import org.bluecollar.bluecollar.login.repository.CustomerRepository;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,8 @@ import java.util.Date;
 @Service
 public class CustomerCouponService {
 
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    
     private final UserCouponRepository userCouponRepository;
     private final PDPRepository pdpRepository;
     private final CustomerRepository customerRepository;
@@ -28,10 +31,36 @@ public class CustomerCouponService {
         this.customerRepository = customerRepository;
     }
 
-
-
+    /**
+     * Redeems a coupon for a customer with optimistic locking retry mechanism.
+     * This ensures thread-safe coupon redemption even in multi-instance deployments.
+     */
     @Transactional
-    public synchronized String redeemCoupon(String customerId, String brandId) {
+    public String redeemCoupon(String customerId, String brandId) {
+        int attempts = 0;
+        
+        while (attempts < MAX_RETRY_ATTEMPTS) {
+            try {
+                return redeemCouponInternal(customerId, brandId);
+            } catch (OptimisticLockingFailureException e) {
+                attempts++;
+                if (attempts >= MAX_RETRY_ATTEMPTS) {
+                    throw new BadRequestException("Unable to redeem coupon due to high demand. Please try again.");
+                }
+                // Brief pause before retry (exponential backoff)
+                try {
+                    Thread.sleep(50L * attempts);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new BadRequestException("Coupon redemption interrupted");
+                }
+            }
+        }
+        
+        throw new BadRequestException("Unable to redeem coupon. Please try again.");
+    }
+    
+    private String redeemCouponInternal(String customerId, String brandId) {
         // Validate input
         if (customerId == null || customerId.trim().isEmpty()) {
             throw new BadRequestException("Customer ID is required");
@@ -64,9 +93,18 @@ public class CustomerCouponService {
             throw new BadRequestException("This coupon campaign has expired");
         }
 
-        // Check if campaign has available coupons (with synchronized check to prevent race condition)
-        long usedCoupons = userCouponRepository.countByCampaignId(campaign.getId());
-        if (usedCoupons >= campaign.getNoOfCoupons()) {
+        // Check if campaign has available coupons
+        // Use remaining count if available (more reliable than counting)
+        int availableCoupons;
+        if (campaign.getRemaining() != null && campaign.getRemaining() >= 0) {
+            availableCoupons = campaign.getRemaining();
+        } else {
+            // Fallback: count dynamically if remaining not set
+            long usedCoupons = userCouponRepository.countByCampaignId(campaign.getId());
+            availableCoupons = campaign.getNoOfCoupons() - (int)usedCoupons;
+        }
+        
+        if (availableCoupons <= 0) {
             throw new BadRequestException("All coupons for this campaign have been claimed");
         }
 
@@ -86,6 +124,10 @@ public class CustomerCouponService {
         userCoupon.setRedeemedAt(now);
         
         userCouponRepository.save(userCoupon);
+
+        // Decrement campaign's remaining count
+        campaign.setRemaining(Math.max(0, availableCoupons - 1));
+        pdpRepository.save(pdp);
 
         // Add to customer's redeemed coupons list
         if (!customer.getRedeemedCoupons().contains(brandId)) {
