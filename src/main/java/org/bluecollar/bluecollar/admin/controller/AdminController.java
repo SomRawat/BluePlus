@@ -2,11 +2,9 @@ package org.bluecollar.bluecollar.admin.controller;
 
 import jakarta.validation.Valid;
 import org.bluecollar.bluecollar.admin.dto.*;
-import org.bluecollar.bluecollar.admin.model.Admin;
 import org.bluecollar.bluecollar.admin.model.AdminRole;
-import org.bluecollar.bluecollar.admin.service.AdminService;
+import org.bluecollar.bluecollar.admin.service.IAdminService;
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,10 +15,9 @@ import java.util.List;
 @Validated
 public class AdminController {
 
-    private final AdminService adminService;
+    private final IAdminService adminService;
 
-    @Autowired
-    public AdminController(AdminService adminService) {
+    public AdminController(IAdminService adminService) {
         this.adminService = adminService;
     }
 

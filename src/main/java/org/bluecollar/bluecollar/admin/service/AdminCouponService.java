@@ -16,7 +16,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 @Service
-public class AdminCouponService {
+public class AdminCouponService implements IAdminCouponService {
 
     private final PDPRepository pdpRepository;
     private final CouponRepository couponRepository;
@@ -26,6 +26,7 @@ public class AdminCouponService {
         this.couponRepository = couponRepository;
     }
 
+    @Override
     public String upsertCouponCampaign(CouponRequest request) {
         Objects.requireNonNull(request, "request must not be null");
 
@@ -79,6 +80,11 @@ public class AdminCouponService {
         campaign.setNoOfCoupons(request.getNoOfCoupons());
         campaign.setActive(!Boolean.FALSE.equals(request.getActive()));
         campaign.setExpiryDays(request.getExpiryDays());
+        
+        // Initialize remaining count for new campaigns or when total count is updated
+        if (!isUpdate || campaign.getRemaining() == null) {
+            campaign.setRemaining(request.getNoOfCoupons());
+        }
 
         Instant expiryInstant = LocalDate.now(ZoneOffset.UTC)
                 .plusDays(request.getExpiryDays().longValue())
@@ -124,6 +130,7 @@ public class AdminCouponService {
         return campaign.getId();
     }
 
+    @Override
     public List<CouponRequest> getAllCampaigns() {
         List<Coupon> coupons = couponRepository.findAll();
         if (coupons.isEmpty()) {
@@ -147,6 +154,7 @@ public class AdminCouponService {
         return result;
     }
 
+    @Override
     public void deleteCampaign(String campaignId, boolean deleteFromPdpAlso) {
         if (!StringUtils.hasText(campaignId)) {
             throw new IllegalArgumentException("campaignId is required");
@@ -182,6 +190,7 @@ public class AdminCouponService {
         return prefix + "-" + random;
     }
 
+    @Override
     public CouponRequest getCouponByBrandId(String brandId) {
         Coupon coupon = couponRepository.findByBrandId(brandId)
                 .orElseThrow(() -> new IllegalArgumentException("No coupon found for brandId: " + brandId));

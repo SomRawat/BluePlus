@@ -1,29 +1,30 @@
 package org.bluecollar.bluecollar.deals.controller;
 
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
+import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.common.service.TranslationService;
 import org.bluecollar.bluecollar.deals.dto.*;
 import org.bluecollar.bluecollar.deals.model.UserCoupon;
 import org.bluecollar.bluecollar.deals.service.CustomerCouponService;
-import org.bluecollar.bluecollar.deals.service.DealsService;
+import org.bluecollar.bluecollar.deals.service.IDealsService;
 import org.bluecollar.bluecollar.login.model.Customer;
 import org.bluecollar.bluecollar.login.repository.CustomerRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/deals")
 public class DealsController {
 
-    private final DealsService dealsService;
+    private final IDealsService dealsService;
     private final SessionService sessionService;
     private final CustomerRepository customerRepository;
     private final CustomerCouponService customerCouponService;
     private final TranslationService translationService;
 
-    @Autowired
-    public DealsController(DealsService dealsService, SessionService sessionService, 
+    public DealsController(IDealsService dealsService, SessionService sessionService, 
                              CustomerRepository customerRepository, CustomerCouponService customerCouponService,
                              org.bluecollar.bluecollar.common.service.TranslationService translationService) {
             this.dealsService = dealsService;
@@ -112,7 +113,7 @@ public class DealsController {
         UserCoupon userCoupon = customerCouponService.getUserCoupon(customerId, brandId);
         
         if (userCoupon == null) {
-            throw new RuntimeException("No coupon found for this brand");
+            throw new ResourceNotFoundException("No coupon found for this brand");
         }
         
         return new BlueCollarApiResponse<>(maybeTranslate(userCoupon, acceptLanguage), 200);
@@ -138,10 +139,11 @@ public class DealsController {
     }
 
     private void markRedeemedBrands(HomePageResponse response, Customer customer) {
-        if (response.getPopularBrands() != null) {
+        if (response.getPopularBrands() != null && !response.getPopularBrands().isEmpty()) {
+            // Optimization: Use customer's redeemed list instead of querying database for each brand
+            List<String> redeemedBrandIds = customer.getRedeemedCoupons();
             response.getPopularBrands().forEach(brand -> {
-                UserCoupon userCoupon = customerCouponService.getUserCoupon(customer.getId(), brand.getBrandId());
-                if (userCoupon != null) {
+                if (redeemedBrandIds.contains(brand.getBrandId())) {
                     brand.setRedeemed(true);
                 }
             });
@@ -149,10 +151,11 @@ public class DealsController {
     }
 
     private void markRedeemedOffers(CategoryDealsResponse response, Customer customer) {
-        if (response.getOffers() != null) {
+        if (response.getOffers() != null && !response.getOffers().isEmpty()) {
+            // Optimization: Use customer's redeemed list instead of querying database for each offer
+            List<String> redeemedBrandIds = customer.getRedeemedCoupons();
             response.getOffers().forEach(offer -> {
-                UserCoupon userCoupon = customerCouponService.getUserCoupon(customer.getId(), offer.getId());
-                if (userCoupon != null) {
+                if (redeemedBrandIds.contains(offer.getId())) {
                     offer.setRedeemed(true);
                 }
             });

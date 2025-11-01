@@ -5,14 +5,12 @@ import org.bluecollar.bluecollar.common.util.SecurityUtil;
 import org.bluecollar.bluecollar.common.exception.UnauthorizedException;
 import org.bluecollar.bluecollar.session.repository.UserSessionRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class SessionService {
     
     private final UserSessionRepository sessionRepository;
 
-    @Autowired
     public SessionService(UserSessionRepository sessionRepository) {
         this.sessionRepository = sessionRepository;
     }

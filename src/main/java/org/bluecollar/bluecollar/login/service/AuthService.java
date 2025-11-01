@@ -12,7 +12,6 @@ import org.bluecollar.bluecollar.login.model.OtpSession;
 import org.bluecollar.bluecollar.login.repository.CustomerRepository;
 import org.bluecollar.bluecollar.login.repository.OtpSessionRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
-public class AuthService {
+public class AuthService implements IAuthService {
 
     private final CustomerRepository customerRepository;
     private final OtpSessionRepository otpSessionRepository;
@@ -29,8 +28,9 @@ public class AuthService {
     private final GoogleOAuthService googleOAuthService;
     private final TwilioService twilioService;
 
-    @Autowired
-    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, SessionService sessionService, GoogleOAuthService googleOAuthService, TwilioService twilioService) {
+    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, 
+                      SessionService sessionService, GoogleOAuthService googleOAuthService, 
+                      TwilioService twilioService) {
         this.customerRepository = customerRepository;
         this.otpSessionRepository = otpSessionRepository;
         this.sessionService = sessionService;
@@ -38,8 +38,7 @@ public class AuthService {
         this.twilioService = twilioService;
     }
 
-    // Encapsulating OTP logic in a transaction ensures that deleting old OTPs
-    // and saving the new one is an atomic operation.
+    @Override
     @Transactional
     public String sendOtp(LoginRequest request) {
         if (!ValidationUtil.isValidMobile(request)) {
@@ -65,6 +64,7 @@ public class AuthService {
         return "OTP sent successfully";
     }
 
+    @Override
     @Transactional
     public LoginResponse verifyOtp(OtpVerifyRequest request, String clientType) {
         if (!ValidationUtil.isValidMobile(request) || !ValidationUtil.isValidOtp(request.getOtp())) {
@@ -112,10 +112,7 @@ public class AuthService {
         return new LoginResponse(sessionToken, isFirstTime, customer.getId(), "Login successful");
     }
     
-    /**
-     * Verify OTP without creating a session or saving to database
-     * Used for simple mobile verification
-     */
+    @Override
     public boolean verifyOtpOnly(OtpVerifyRequest request) {
         if (!ValidationUtil.isValidMobile(request) || !ValidationUtil.isValidOtp(request.getOtp())) {
             throw new BadRequestException("Invalid mobile number or OTP format.");
@@ -141,6 +138,7 @@ public class AuthService {
         return true;
     }
 
+    @Override
     public LoginResponse googleAuth(GoogleAuthRequest request, String clientType) {
         if (request.getIdToken() == null || request.getIdToken().trim().isEmpty()) {
             throw new BadRequestException("Google ID token is required.");
@@ -179,6 +177,7 @@ public class AuthService {
                 customer.getEmail(), customer.getName(), customer.getProfilePhoto());
     }
 
+    @Override
     @Transactional
     public Customer updateProfile(String customerId, UpdateProfileRequest request) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
@@ -273,6 +272,7 @@ public class AuthService {
                 customer.getEmail() == null || customer.getEmail().trim().isEmpty();
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Customer getCustomerDetails(String sessionToken) {
         String customerId = sessionService.getCustomerIdFromToken(sessionToken);

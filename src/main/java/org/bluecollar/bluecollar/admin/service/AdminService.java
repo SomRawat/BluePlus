@@ -10,28 +10,31 @@ import org.bluecollar.bluecollar.common.exception.BadRequestException;
 import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.common.exception.UnauthorizedException;
 import org.bluecollar.bluecollar.common.service.EmailService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
-public class AdminService {
+public class AdminService implements IAdminService {
+    
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     
     private final AdminRepository adminRepository;
-    private final AdminSessionService sessionService;
+    private final IAdminSessionService sessionService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     
-    @Autowired
-    public AdminService(AdminRepository adminRepository, AdminSessionService sessionService, 
+    @Value("${admin.default.password:admin123}")
+    private String defaultAdminPassword;
+    
+    public AdminService(AdminRepository adminRepository, IAdminSessionService sessionService, 
                        PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository,
                        EmailService emailService) {
         this.adminRepository = adminRepository;
@@ -41,11 +44,12 @@ public class AdminService {
         this.emailService = emailService;
     }
 
-    // Expose session service for controllers needing role-aware lists
-    public AdminSessionService getSessionService() {
+    @Override
+    public IAdminSessionService getSessionService() {
         return sessionService;
     }
     
+    @Override
     @Transactional
     public String adminLogin(AdminLoginRequest request) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
@@ -67,6 +71,7 @@ public class AdminService {
         return sessionService.createSession(admin);
     }
     
+    @Override
     @Transactional
     public AdminResponse createAdmin(CreateAdminRequest request, String sessionToken) {
         // Validate that the current admin can create new admins
@@ -107,6 +112,7 @@ public class AdminService {
         return new AdminResponse(savedAdmin);
     }
     
+    @Override
     @Transactional(readOnly = true)
     public List<AdminResponse> getAllAdmins(String sessionToken) {
         // SUPER_ADMIN: see all; ADMIN: see only VIEWERs
@@ -118,16 +124,16 @@ public class AdminService {
         if (callerRole == AdminRole.ADMIN) {
             admins = admins.stream()
                     .filter(a -> a.getRole() == AdminRole.VIEWER)
-                    .collect(Collectors.toList());
+                    .toList();
         }
-        return admins.stream().map(AdminResponse::new).collect(Collectors.toList());
+        return admins.stream().map(AdminResponse::new).toList();
     }
     
+    @Override
     @Transactional
     public AdminResponse updateAdminRole(String adminId, UpdateAdminRoleRequest request, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
-        // Enforce role update rules: ADMIN cannot assign roles other than VIEWER
         AdminSessionService.AdminSession updater = sessionService.getSession(sessionToken);
         
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
@@ -135,40 +141,69 @@ public class AdminService {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
-        if (updater.getRole() == AdminRole.ADMIN && request.getRole() != AdminRole.VIEWER) {
-            throw new BadRequestException("ADMIN can only set role to VIEWER");
+        Admin target = adminOpt.get();
+        
+        // ADMIN can only update VIEWER roles
+        if (updater.getRole() == AdminRole.ADMIN) {
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only update VIEWER roles");
+            }
+            if (request.getRole() != AdminRole.VIEWER) {
+                throw new BadRequestException("ADMIN can only set role to VIEWER");
+            }
         }
-        if (request.getRole() == AdminRole.SUPER_ADMIN) {
+        
+        // Don't allow changing the last SUPER_ADMIN to a different role
+        if (target.getRole() == AdminRole.SUPER_ADMIN && request.getRole() != AdminRole.SUPER_ADMIN) {
             long superAdminCount = adminRepository.findAll().stream()
-                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN && !a.getId().equals(adminId))
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
+                    .count();
+            if (superAdminCount <= 1) {
+                throw new BadRequestException("Cannot change role of the last SUPER_ADMIN");
+            }
+        }
+        
+        // Don't allow creating more than one SUPER_ADMIN
+        if (request.getRole() == AdminRole.SUPER_ADMIN && target.getRole() != AdminRole.SUPER_ADMIN) {
+            long superAdminCount = adminRepository.findAll().stream()
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
                     .count();
             if (superAdminCount >= 1) {
                 throw new BadRequestException("A SUPER_ADMIN already exists");
             }
         }
-        admin.setRole(request.getRole());
-        admin.setUpdatedAt(LocalDateTime.now());
         
-        Admin savedAdmin = adminRepository.save(admin);
+        target.setRole(request.getRole());
+        target.setUpdatedAt(LocalDateTime.now());
+        
+        Admin savedAdmin = adminRepository.save(target);
         return new AdminResponse(savedAdmin);
     }
     
+    @Override
     @Transactional
     public AdminResponse updateAdmin(String adminId, UpdateAdminRequest adminUpdate, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
+        
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
         
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
+        Admin target = adminOpt.get();
         
-        // Update fields (password updates optional and without validation)
+        // ADMIN can only update VIEWER details
+        if (callerRole == AdminRole.ADMIN && target.getRole() != AdminRole.VIEWER) {
+            throw new UnauthorizedException("ADMIN can only update VIEWER details");
+        }
+        
+        // Update fields
         if (adminUpdate.getName() != null) {
-            admin.setName(adminUpdate.getName());
+            target.setName(adminUpdate.getName());
         }
         if (adminUpdate.getEmail() != null) {
             // Check if email is already taken by another admin
@@ -176,19 +211,20 @@ public class AdminService {
             if (existingAdmin.isPresent() && !existingAdmin.get().getId().equals(adminId)) {
                 throw new BadRequestException("Email already registered with another admin");
             }
-            admin.setEmail(adminUpdate.getEmail());
+            target.setEmail(adminUpdate.getEmail());
         }
         // Password updates allowed but optional (no validation)
         if (adminUpdate.getPassword() != null && !adminUpdate.getPassword().trim().isEmpty()) {
-            admin.setPassword(passwordEncoder.encode(adminUpdate.getPassword()));
+            target.setPassword(passwordEncoder.encode(adminUpdate.getPassword()));
         }
         
-        admin.setUpdatedAt(LocalDateTime.now());
+        target.setUpdatedAt(LocalDateTime.now());
         
-        Admin savedAdmin = adminRepository.save(admin);
+        Admin savedAdmin = adminRepository.save(target);
         return new AdminResponse(savedAdmin);
     }
     
+    @Override
     @Transactional
     public String deleteAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
@@ -230,42 +266,82 @@ public class AdminService {
         return "Admin deleted successfully";
     }
     
+    @Override
     @Transactional
     public String deactivateAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
         
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+        
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
-        admin.setActive(false);
-        admin.setUpdatedAt(LocalDateTime.now());
+        Admin target = adminOpt.get();
         
-        adminRepository.save(admin);
+        // Prevent self-deactivation
+        if (caller.getAdminId().equals(adminId)) {
+            throw new BadRequestException("Cannot deactivate yourself");
+        }
+        
+        // ADMIN cannot deactivate SUPER_ADMIN or other ADMINs
+        if (callerRole == AdminRole.ADMIN) {
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only deactivate VIEWER");
+            }
+        }
+        
+        // Don't allow deactivating the last active SUPER_ADMIN
+        if (target.getRole() == AdminRole.SUPER_ADMIN && target.isActive()) {
+            long activeSuperAdminCount = adminRepository.findAll().stream()
+                    .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN && a.isActive())
+                    .count();
+            if (activeSuperAdminCount <= 1) {
+                throw new BadRequestException("Cannot deactivate the last active SUPER_ADMIN");
+            }
+        }
+        
+        target.setActive(false);
+        target.setUpdatedAt(LocalDateTime.now());
+        
+        adminRepository.save(target);
         return "Admin deactivated successfully";
     }
     
+    @Override
     @Transactional
     public String activateAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
         sessionService.validateCanManageUsers(sessionToken);
         
+        AdminSessionService.AdminSession caller = sessionService.getSession(sessionToken);
+        AdminRole callerRole = caller.getRole();
+        
         Optional<Admin> adminOpt = adminRepository.findById(adminId);
         if (adminOpt.isEmpty()) {
             throw new ResourceNotFoundException("Admin not found with ID: " + adminId);
         }
         
-        Admin admin = adminOpt.get();
-        admin.setActive(true);
-        admin.setUpdatedAt(LocalDateTime.now());
+        Admin target = adminOpt.get();
         
-        adminRepository.save(admin);
+        // ADMIN cannot activate SUPER_ADMIN or other ADMINs
+        if (callerRole == AdminRole.ADMIN) {
+            if (target.getRole() != AdminRole.VIEWER) {
+                throw new UnauthorizedException("ADMIN can only activate VIEWER");
+            }
+        }
+        
+        target.setActive(true);
+        target.setUpdatedAt(LocalDateTime.now());
+        
+        adminRepository.save(target);
         return "Admin activated successfully";
     }
     
+    @Override
     @Transactional(readOnly = true)
     public AdminResponse getAdminProfile(String sessionToken) {
         AdminSessionService.AdminSession session = sessionService.getSession(sessionToken);
@@ -278,12 +354,14 @@ public class AdminService {
         return new AdminResponse(adminOpt.get());
     }
     
+    @Override
     @Transactional
     public String logout(String sessionToken) {
         sessionService.logout(sessionToken);
         return "Logged out successfully";
     }
     
+    @Override
     @Transactional
     public String forgotPassword(ForgotPasswordRequest request) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
@@ -299,8 +377,8 @@ public class AdminService {
         // Delete any existing tokens for this email
         passwordResetTokenRepository.deleteByEmail(request.getEmail());
         
-        // Generate 6-digit OTP
-        String otp = String.format("%06d", new Random().nextInt(1000000));
+        // Generate 6-digit OTP using SecureRandom
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         
         // Save token
         PasswordResetToken token = new PasswordResetToken(request.getEmail(), otp);
@@ -312,6 +390,7 @@ public class AdminService {
         return "Password reset OTP sent to email";
     }
     
+    @Override
     @Transactional
     public String verifyResetOtp(VerifyResetOtpRequest request) {
         // Find admin by email
@@ -337,6 +416,7 @@ public class AdminService {
         return "OTP verified successfully";
     }
     
+    @Override
     @Transactional
     public String resetPassword(ResetPasswordRequest request) {
         // Find admin by email
@@ -369,13 +449,13 @@ public class AdminService {
         return "Password reset successfully";
     }
     
-    // Initialize default SUPER_ADMIN if no admins exist
+    @Override
     @Transactional
     public void initializeDefaultAdmin() {
         if (adminRepository.count() == 0) {
             Admin superAdmin = new Admin();
             superAdmin.setEmail("admin@bluecollar.com");
-            superAdmin.setPassword(passwordEncoder.encode("admin123"));
+            superAdmin.setPassword(passwordEncoder.encode(defaultAdminPassword));
             superAdmin.setName("Super Admin");
             superAdmin.setRole(AdminRole.SUPER_ADMIN);
             superAdmin.setCreatedBy("SYSTEM");

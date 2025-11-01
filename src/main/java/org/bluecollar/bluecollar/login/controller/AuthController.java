@@ -5,21 +5,19 @@ import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
 import org.bluecollar.bluecollar.common.service.TranslationService;
 import org.bluecollar.bluecollar.login.dto.*;
 import org.bluecollar.bluecollar.login.model.Customer;
-import org.bluecollar.bluecollar.login.service.AuthService;
+import org.bluecollar.bluecollar.login.service.IAuthService;
 import org.bluecollar.bluecollar.session.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
     private final SessionService sessionService;
     private final TranslationService translationService;
 
-    @Autowired
-    public AuthController(AuthService authService, SessionService sessionService, TranslationService translationService) {
+    public AuthController(IAuthService authService, SessionService sessionService, TranslationService translationService) {
         this.authService = authService;
         this.sessionService = sessionService;
         this.translationService = translationService;

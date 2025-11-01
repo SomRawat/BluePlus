@@ -1,10 +1,9 @@
 package org.bluecollar.bluecollar.admin.controller;
 
-import org.bluecollar.bluecollar.admin.service.AdminSessionService;
+import org.bluecollar.bluecollar.admin.service.IAdminSessionService;
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
 import org.bluecollar.bluecollar.deals.dto.CouponRequest;
-import org.bluecollar.bluecollar.admin.service.AdminCouponService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.bluecollar.bluecollar.admin.service.IAdminCouponService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,11 +12,10 @@ import java.util.List;
 @RestController()
 public class AdminCouponController {
 
-    private final AdminCouponService couponService;
-    private final AdminSessionService adminSessionService;
+    private final IAdminCouponService couponService;
+    private final IAdminSessionService adminSessionService;
 
-    @Autowired
-    public AdminCouponController(AdminCouponService couponService, AdminSessionService adminSessionService) {
+    public AdminCouponController(IAdminCouponService couponService, IAdminSessionService adminSessionService) {
         this.couponService = couponService;
         this.adminSessionService = adminSessionService;
     }
