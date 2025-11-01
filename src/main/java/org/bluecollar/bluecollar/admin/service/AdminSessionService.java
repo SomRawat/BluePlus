@@ -10,10 +10,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-public class AdminSessionService {
+public class AdminSessionService implements IAdminSessionService {
     
     private final Map<String, AdminSession> sessions = new ConcurrentHashMap<>();
     
+    @Override
     public String createSession(Admin admin) {
         String sessionToken = UUID.randomUUID().toString();
         AdminSession session = new AdminSession(admin.getId(), admin.getEmail(), admin.getRole(), LocalDateTime.now());
@@ -21,6 +22,7 @@ public class AdminSessionService {
         return sessionToken;
     }
     
+    @Override
     public AdminSession getSession(String sessionToken) {
         AdminSession session = sessions.get(sessionToken);
         if (session == null) {
@@ -36,10 +38,12 @@ public class AdminSessionService {
         return session;
     }
     
+    @Override
     public void validateSession(String sessionToken) {
         getSession(sessionToken);
     }
     
+    @Override
     public void validateRole(String sessionToken, AdminRole requiredRole) {
         AdminSession session = getSession(sessionToken);
         if (session.getRole().ordinal() > requiredRole.ordinal()) {
@@ -47,6 +51,7 @@ public class AdminSessionService {
         }
     }
     
+    @Override
     public void validateCanManageUsers(String sessionToken) {
         AdminSession session = getSession(sessionToken);
         if (!session.getRole().canManageUsers()) {
@@ -54,6 +59,7 @@ public class AdminSessionService {
         }
     }
     
+    @Override
     public void validateCanManageDeals(String sessionToken) {
         AdminSession session = getSession(sessionToken);
         if (!session.getRole().canManageDeals()) {
@@ -61,6 +67,7 @@ public class AdminSessionService {
         }
     }
     
+    @Override
     public void validateCanCreateAdmins(String sessionToken) {
         AdminSession session = getSession(sessionToken);
         if (!session.getRole().canCreateAdmins()) {
@@ -68,12 +75,14 @@ public class AdminSessionService {
         }
     }
     
+    @Override
     public void validateCanViewDeals(String sessionToken) {
         AdminSession session = getSession(sessionToken);
         // All roles can view deals (SUPER_ADMIN, ADMIN, VIEWER)
         // This method just validates the session exists
     }
     
+    @Override
     public void logout(String sessionToken) {
         sessions.remove(sessionToken);
     }

@@ -5,6 +5,7 @@ import org.bluecollar.bluecollar.feedback.model.Feedback;
 import org.bluecollar.bluecollar.feedback.repository.FeedbackRepository;
 import org.bluecollar.bluecollar.login.model.Customer;
 import org.bluecollar.bluecollar.login.service.AuthService;
+import org.bluecollar.bluecollar.login.service.IAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
@@ -14,17 +15,18 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public class FeedbackService {
+public class FeedbackService implements IFeedbackService {
     
     @Autowired
     private FeedbackRepository feedbackRepository;
     
     @Autowired
-    private AuthService authService;
+    private IAuthService authService;
     
     @Autowired(required = false)
     private JavaMailSender mailSender;
     
+    @Override
     @Async
     public void submitFeedback(String sessionToken, FeedbackRequest request) {
         // Get customer details from session token

@@ -5,25 +5,23 @@ import org.bluecollar.bluecollar.common.service.TranslationService;
 import org.bluecollar.bluecollar.deals.dto.*;
 import org.bluecollar.bluecollar.deals.model.UserCoupon;
 import org.bluecollar.bluecollar.deals.service.CustomerCouponService;
-import org.bluecollar.bluecollar.deals.service.DealsService;
+import org.bluecollar.bluecollar.deals.service.IDealsService;
 import org.bluecollar.bluecollar.login.model.Customer;
 import org.bluecollar.bluecollar.login.repository.CustomerRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/deals")
 public class DealsController {
 
-    private final DealsService dealsService;
+    private final IDealsService dealsService;
     private final SessionService sessionService;
     private final CustomerRepository customerRepository;
     private final CustomerCouponService customerCouponService;
     private final TranslationService translationService;
 
-    @Autowired
-    public DealsController(DealsService dealsService, SessionService sessionService, 
+    public DealsController(IDealsService dealsService, SessionService sessionService, 
                              CustomerRepository customerRepository, CustomerCouponService customerCouponService,
                              org.bluecollar.bluecollar.common.service.TranslationService translationService) {
             this.dealsService = dealsService;

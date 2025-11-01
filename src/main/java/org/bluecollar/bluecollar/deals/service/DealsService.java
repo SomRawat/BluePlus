@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class DealsService {
+public class DealsService implements IDealsService {
 
     @Autowired
     private BrandRepository brandRepository;
@@ -42,6 +42,7 @@ public class DealsService {
     @Autowired
     private CouponRepository couponRepository;
 
+    @Override
     public HomePageResponse getHomePage() {
         List<HomePage> homePages = homePageRepository.findAll();
         if (homePages.isEmpty()) {
@@ -80,12 +81,13 @@ public class DealsService {
         return response;
     }
 
-    // Admin panel helper to fetch stored home page data
+    @Override
     public HomePageData getHomePageData() {
         List<HomePage> homePages = homePageRepository.findAll();
         return homePages.isEmpty() ? new HomePageData() : homePages.get(0).getData();
     }
 
+    @Override
     public BrandDetailsResponse getBrandDetails(String brandId) {
         PDP pdp = pdpRepository.findById(brandId)
                 .orElseThrow(() -> new ResourceNotFoundException("Brand not found"));
@@ -93,6 +95,7 @@ public class DealsService {
         return convertPDPToBrandDetailsResponse(pdp);
     }
 
+    @Override
     public CategoryDealsResponse getCategoryDeals(String categoryId, String tab) {
         CategoryDealsResponse response = new CategoryDealsResponse();
 
@@ -118,6 +121,7 @@ public class DealsService {
         return response;
     }
 
+    @Override
     public List<PLPResponse> getAllCategoryPagesData() {
         return plpRepository.findAll().stream()
                 .map(plp -> {
@@ -133,13 +137,14 @@ public class DealsService {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<PDPData> getAllBrandPagesData() {
         return pdpRepository.findAll().stream()
                 .map(this::convertPDPToPDPData)
                 .collect(Collectors.toList());
     }
 
-    // Admin methods for managing deals
+    @Override
     @Transactional
     public HomePageResponse createHomePage(HomePageData homePageData) {
         // Generate IDs for items that don't have them
@@ -276,11 +281,13 @@ public class DealsService {
         }
     }
 
+    @Override
     @Transactional
     public HomePageResponse updateHomePage(HomePageData homePageData) {
         return createHomePage(homePageData); // For now, just recreate
     }
 
+    @Override
     @Transactional
     public CategoryDealsResponse createCategoryDeals(PLPData plpData) {
         String finalCategoryId = plpData.getCategoryId();
@@ -322,6 +329,7 @@ public class DealsService {
         return getCategoryDeals(savedPlp.getCategoryId(), plpData.getActiveTab());
     }
 
+    @Override
     @Transactional
     public BrandDetailsResponse createBrandDetails(PDPData pdpData) {
         if (pdpData.getId() != null && !pdpData.getId().isEmpty()) {
@@ -358,11 +366,13 @@ public class DealsService {
         return convertPDPToBrandDetailsResponse(savedPdp);
     }
 
+    @Override
     @Transactional
     public void deleteCategoryDeals(String categoryId) {
         plpRepository.deleteById(categoryId);
     }
 
+    @Override
     @Transactional
     public void deleteCategoryOffer(String categoryId, String offerId) {
         PLP plp = plpRepository.findByCategoryIdAndActiveTrue(categoryId);
@@ -372,17 +382,20 @@ public class DealsService {
         }
     }
 
+    @Override
     @Transactional
     public void deleteBrandDetails(String brandId) {
         // This method is now deprecated, use deleteBrandDetailsById instead
         throw new UnsupportedOperationException("Use deleteBrandDetailsById instead");
     }
 
+    @Override
     @Transactional
     public void deleteBrandDetailsById(String id) {
         pdpRepository.deleteById(id);
     }
 
+    @Override
     @Transactional
     public void deleteHomePageItem(HomePageItemType type, String id) {
         List<HomePage> homePages = homePageRepository.findAll();
@@ -604,6 +617,7 @@ public class DealsService {
         return dto;
     }
     
+    @Override
     public CouponRequest getCouponByBrandId(String brandId) {
         Coupon coupon = couponRepository.findByBrandId(brandId)
                 .orElseThrow(() -> new RuntimeException("No coupon found for brandId: " + brandId));

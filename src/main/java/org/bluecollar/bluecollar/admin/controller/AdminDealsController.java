@@ -1,11 +1,10 @@
 package org.bluecollar.bluecollar.admin.controller;
 
 import jakarta.validation.Valid;
-import org.bluecollar.bluecollar.admin.service.AdminSessionService;
+import org.bluecollar.bluecollar.admin.service.IAdminSessionService;
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
 import org.bluecollar.bluecollar.deals.dto.*;
-import org.bluecollar.bluecollar.deals.service.DealsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.bluecollar.bluecollar.deals.service.IDealsService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,11 +13,10 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class AdminDealsController {
 
-    private final DealsService dealsService;
-    private final AdminSessionService sessionService;
+    private final IDealsService dealsService;
+    private final IAdminSessionService sessionService;
 
-    @Autowired
-    public AdminDealsController(DealsService dealsService, AdminSessionService sessionService) {
+    public AdminDealsController(IDealsService dealsService, IAdminSessionService sessionService) {
         this.dealsService = dealsService;
         this.sessionService = sessionService;
     }
@@ -88,14 +86,6 @@ public class AdminDealsController {
     @DeleteMapping("/brand/{id}")
     public BlueCollarApiResponse<String> deleteBrandDetails(@PathVariable String id,
                                                             @RequestHeader("Admin-Session-Token") String sessionToken) {
-        sessionService.validateCanManageDeals(sessionToken);
-        dealsService.deleteBrandDetailsById(id);
-        return new BlueCollarApiResponse<>("Brand details deleted successfully", 200);
-    }
-    
-    @DeleteMapping("/brand/id/{id}")
-    public BlueCollarApiResponse<String> deleteBrandDetailsById(@PathVariable String id,
-                                                               @RequestHeader("Admin-Session-Token") String sessionToken) {
         sessionService.validateCanManageDeals(sessionToken);
         dealsService.deleteBrandDetailsById(id);
         return new BlueCollarApiResponse<>("Brand details deleted successfully", 200);

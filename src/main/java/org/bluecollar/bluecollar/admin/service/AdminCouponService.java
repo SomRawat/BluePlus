@@ -16,7 +16,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 @Service
-public class AdminCouponService {
+public class AdminCouponService implements IAdminCouponService {
 
     private final PDPRepository pdpRepository;
     private final CouponRepository couponRepository;
@@ -26,6 +26,7 @@ public class AdminCouponService {
         this.couponRepository = couponRepository;
     }
 
+    @Override
     public String upsertCouponCampaign(CouponRequest request) {
         Objects.requireNonNull(request, "request must not be null");
 
@@ -124,6 +125,7 @@ public class AdminCouponService {
         return campaign.getId();
     }
 
+    @Override
     public List<CouponRequest> getAllCampaigns() {
         List<Coupon> coupons = couponRepository.findAll();
         if (coupons.isEmpty()) {
@@ -147,6 +149,7 @@ public class AdminCouponService {
         return result;
     }
 
+    @Override
     public void deleteCampaign(String campaignId, boolean deleteFromPdpAlso) {
         if (!StringUtils.hasText(campaignId)) {
             throw new IllegalArgumentException("campaignId is required");
@@ -182,6 +185,7 @@ public class AdminCouponService {
         return prefix + "-" + random;
     }
 
+    @Override
     public CouponRequest getCouponByBrandId(String brandId) {
         Coupon coupon = couponRepository.findByBrandId(brandId)
                 .orElseThrow(() -> new IllegalArgumentException("No coupon found for brandId: " + brandId));

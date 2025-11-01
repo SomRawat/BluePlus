@@ -10,7 +10,6 @@ import org.bluecollar.bluecollar.common.exception.BadRequestException;
 import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.common.exception.UnauthorizedException;
 import org.bluecollar.bluecollar.common.service.EmailService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +21,15 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
-public class AdminService {
+public class AdminService implements IAdminService {
     
     private final AdminRepository adminRepository;
-    private final AdminSessionService sessionService;
+    private final IAdminSessionService sessionService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     
-    @Autowired
-    public AdminService(AdminRepository adminRepository, AdminSessionService sessionService, 
+    public AdminService(AdminRepository adminRepository, IAdminSessionService sessionService, 
                        PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository,
                        EmailService emailService) {
         this.adminRepository = adminRepository;
@@ -41,11 +39,12 @@ public class AdminService {
         this.emailService = emailService;
     }
 
-    // Expose session service for controllers needing role-aware lists
-    public AdminSessionService getSessionService() {
+    @Override
+    public IAdminSessionService getSessionService() {
         return sessionService;
     }
     
+    @Override
     @Transactional
     public String adminLogin(AdminLoginRequest request) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
@@ -67,6 +66,7 @@ public class AdminService {
         return sessionService.createSession(admin);
     }
     
+    @Override
     @Transactional
     public AdminResponse createAdmin(CreateAdminRequest request, String sessionToken) {
         // Validate that the current admin can create new admins
@@ -107,6 +107,7 @@ public class AdminService {
         return new AdminResponse(savedAdmin);
     }
     
+    @Override
     @Transactional(readOnly = true)
     public List<AdminResponse> getAllAdmins(String sessionToken) {
         // SUPER_ADMIN: see all; ADMIN: see only VIEWERs
@@ -123,6 +124,7 @@ public class AdminService {
         return admins.stream().map(AdminResponse::new).collect(Collectors.toList());
     }
     
+    @Override
     @Transactional
     public AdminResponse updateAdminRole(String adminId, UpdateAdminRoleRequest request, String sessionToken) {
         // Validate that the current admin can manage users
@@ -154,6 +156,7 @@ public class AdminService {
         return new AdminResponse(savedAdmin);
     }
     
+    @Override
     @Transactional
     public AdminResponse updateAdmin(String adminId, UpdateAdminRequest adminUpdate, String sessionToken) {
         // Validate that the current admin can manage users
@@ -189,6 +192,7 @@ public class AdminService {
         return new AdminResponse(savedAdmin);
     }
     
+    @Override
     @Transactional
     public String deleteAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
@@ -230,6 +234,7 @@ public class AdminService {
         return "Admin deleted successfully";
     }
     
+    @Override
     @Transactional
     public String deactivateAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
@@ -248,6 +253,7 @@ public class AdminService {
         return "Admin deactivated successfully";
     }
     
+    @Override
     @Transactional
     public String activateAdmin(String adminId, String sessionToken) {
         // Validate that the current admin can manage users
@@ -266,6 +272,7 @@ public class AdminService {
         return "Admin activated successfully";
     }
     
+    @Override
     @Transactional(readOnly = true)
     public AdminResponse getAdminProfile(String sessionToken) {
         AdminSessionService.AdminSession session = sessionService.getSession(sessionToken);
@@ -278,12 +285,14 @@ public class AdminService {
         return new AdminResponse(adminOpt.get());
     }
     
+    @Override
     @Transactional
     public String logout(String sessionToken) {
         sessionService.logout(sessionToken);
         return "Logged out successfully";
     }
     
+    @Override
     @Transactional
     public String forgotPassword(ForgotPasswordRequest request) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
@@ -312,6 +321,7 @@ public class AdminService {
         return "Password reset OTP sent to email";
     }
     
+    @Override
     @Transactional
     public String verifyResetOtp(VerifyResetOtpRequest request) {
         // Find admin by email
@@ -337,6 +347,7 @@ public class AdminService {
         return "OTP verified successfully";
     }
     
+    @Override
     @Transactional
     public String resetPassword(ResetPasswordRequest request) {
         // Find admin by email
@@ -369,7 +380,7 @@ public class AdminService {
         return "Password reset successfully";
     }
     
-    // Initialize default SUPER_ADMIN if no admins exist
+    @Override
     @Transactional
     public void initializeDefaultAdmin() {
         if (adminRepository.count() == 0) {
