@@ -11,6 +11,8 @@ import org.bluecollar.bluecollar.login.repository.CustomerRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/deals")
 public class DealsController {
@@ -136,10 +138,11 @@ public class DealsController {
     }
 
     private void markRedeemedBrands(HomePageResponse response, Customer customer) {
-        if (response.getPopularBrands() != null) {
+        if (response.getPopularBrands() != null && !response.getPopularBrands().isEmpty()) {
+            // Optimization: Use customer's redeemed list instead of querying database for each brand
+            List<String> redeemedBrandIds = customer.getRedeemedCoupons();
             response.getPopularBrands().forEach(brand -> {
-                UserCoupon userCoupon = customerCouponService.getUserCoupon(customer.getId(), brand.getBrandId());
-                if (userCoupon != null) {
+                if (redeemedBrandIds.contains(brand.getBrandId())) {
                     brand.setRedeemed(true);
                 }
             });
@@ -147,10 +150,11 @@ public class DealsController {
     }
 
     private void markRedeemedOffers(CategoryDealsResponse response, Customer customer) {
-        if (response.getOffers() != null) {
+        if (response.getOffers() != null && !response.getOffers().isEmpty()) {
+            // Optimization: Use customer's redeemed list instead of querying database for each offer
+            List<String> redeemedBrandIds = customer.getRedeemedCoupons();
             response.getOffers().forEach(offer -> {
-                UserCoupon userCoupon = customerCouponService.getUserCoupon(customer.getId(), offer.getId());
-                if (userCoupon != null) {
+                if (redeemedBrandIds.contains(offer.getId())) {
                     offer.setRedeemed(true);
                 }
             });
