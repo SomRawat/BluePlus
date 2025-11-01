@@ -12,7 +12,6 @@ import org.bluecollar.bluecollar.login.model.OtpSession;
 import org.bluecollar.bluecollar.login.repository.CustomerRepository;
 import org.bluecollar.bluecollar.login.repository.OtpSessionRepository;
 import org.bluecollar.bluecollar.session.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +28,9 @@ public class AuthService implements IAuthService {
     private final GoogleOAuthService googleOAuthService;
     private final TwilioService twilioService;
 
-    @Autowired
-    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, SessionService sessionService, GoogleOAuthService googleOAuthService, TwilioService twilioService) {
+    public AuthService(CustomerRepository customerRepository, OtpSessionRepository otpSessionRepository, 
+                      SessionService sessionService, GoogleOAuthService googleOAuthService, 
+                      TwilioService twilioService) {
         this.customerRepository = customerRepository;
         this.otpSessionRepository = otpSessionRepository;
         this.sessionService = sessionService;

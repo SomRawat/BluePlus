@@ -10,24 +10,29 @@ import org.bluecollar.bluecollar.common.exception.BadRequestException;
 import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.common.exception.UnauthorizedException;
 import org.bluecollar.bluecollar.common.service.EmailService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
 public class AdminService implements IAdminService {
+    
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     
     private final AdminRepository adminRepository;
     private final IAdminSessionService sessionService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    
+    @Value("${admin.default.password:admin123}")
+    private String defaultAdminPassword;
     
     public AdminService(AdminRepository adminRepository, IAdminSessionService sessionService, 
                        PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository,
@@ -119,9 +124,9 @@ public class AdminService implements IAdminService {
         if (callerRole == AdminRole.ADMIN) {
             admins = admins.stream()
                     .filter(a -> a.getRole() == AdminRole.VIEWER)
-                    .collect(Collectors.toList());
+                    .toList();
         }
-        return admins.stream().map(AdminResponse::new).collect(Collectors.toList());
+        return admins.stream().map(AdminResponse::new).toList();
     }
     
     @Override
@@ -372,8 +377,8 @@ public class AdminService implements IAdminService {
         // Delete any existing tokens for this email
         passwordResetTokenRepository.deleteByEmail(request.getEmail());
         
-        // Generate 6-digit OTP
-        String otp = String.format("%06d", new Random().nextInt(1000000));
+        // Generate 6-digit OTP using SecureRandom
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         
         // Save token
         PasswordResetToken token = new PasswordResetToken(request.getEmail(), otp);
@@ -450,7 +455,7 @@ public class AdminService implements IAdminService {
         if (adminRepository.count() == 0) {
             Admin superAdmin = new Admin();
             superAdmin.setEmail("admin@bluecollar.com");
-            superAdmin.setPassword(passwordEncoder.encode("admin123"));
+            superAdmin.setPassword(passwordEncoder.encode(defaultAdminPassword));
             superAdmin.setName("Super Admin");
             superAdmin.setRole(AdminRole.SUPER_ADMIN);
             superAdmin.setCreatedBy("SYSTEM");

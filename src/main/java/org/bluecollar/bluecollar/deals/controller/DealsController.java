@@ -1,6 +1,7 @@
 package org.bluecollar.bluecollar.deals.controller;
 
 import org.bluecollar.bluecollar.common.dto.BlueCollarApiResponse;
+import org.bluecollar.bluecollar.common.exception.ResourceNotFoundException;
 import org.bluecollar.bluecollar.common.service.TranslationService;
 import org.bluecollar.bluecollar.deals.dto.*;
 import org.bluecollar.bluecollar.deals.model.UserCoupon;
@@ -112,7 +113,7 @@ public class DealsController {
         UserCoupon userCoupon = customerCouponService.getUserCoupon(customerId, brandId);
         
         if (userCoupon == null) {
-            throw new RuntimeException("No coupon found for this brand");
+            throw new ResourceNotFoundException("No coupon found for this brand");
         }
         
         return new BlueCollarApiResponse<>(maybeTranslate(userCoupon, acceptLanguage), 200);
