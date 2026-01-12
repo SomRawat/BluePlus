@@ -1,5 +1,5 @@
 # Build stage
-FROM openjdk:21-jdk-slim AS build
+FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN chmod +x gradlew
 RUN ./gradlew clean build -x test
 
 # Runtime stage
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 
